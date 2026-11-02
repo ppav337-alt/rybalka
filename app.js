@@ -49,7 +49,8 @@
     hidden: store.get('hidden', []),
     journal: store.get('journal', []),
     settings: store.get('settings', { home: { lat: 39.7646, lon: 3.1541, name: 'Can Picafort' }, filter: 'all', notif: false }),
-    parks: store.get('parks', {}),          // свои отметки парковки {id:{lat,lon}}
+    parks: store.get('parks', {}),
+    lic: store.get('lic', null),            // лицензия {num, until, holder, p1, p2}          // свои отметки парковки {id:{lat,lon}}
     fishView: 'fish',
     wx: store.get('wx', null),                // { at, ids:[], data:[...] }
     loading: false, err: null
@@ -148,6 +149,7 @@
       ' <button class="link" data-act="refresh">обновить</button></div></header>';
     if (S.loading) h += '<p class="note">Загружаю погоду…</p>';
     if (S.err) h += '<p class="warn">' + esc(S.err) + '</p>';
+    const ls = licState(); if (ls && ls.d <= 30) h += '<p class="warn">' + esc(ls.text) + ' <button class="link" data-act="licshow">Открыть</button></p>';
     if (!S.wx && !S.loading) h += '<p class="note">Погоды пока нет. Нажмите «обновить», нужен интернет.</p>';
     h += '<div class="list">';
     r.forEach(({ s, b, wx }) => {
@@ -411,11 +413,11 @@
     const k = wx.t.indexOf(time.slice(0, 13) + ':00'); if (k < 0) return '';
     return 'ветер ' + Math.round(wx.wind[k]) + ' ' + compass(wx.dir[k]) + (wx.wave[k] != null ? ', волна ' + wx.wave[k].toFixed(1) : '') + ', ' + Math.round(wx.press[k]) + ' гПа';
   }
-  function shrink(file) {
+  function shrink(file, max) {
     return new Promise(res => {
       const img = new Image(), url = URL.createObjectURL(file);
       img.onload = () => {
-        const k = Math.min(1, 1000 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+        const k = Math.min(1, (max || 1000) / Math.max(img.width, img.height)), c = document.createElement('canvas');
         c.width = img.width * k; c.height = img.height * k; c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
         URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg', 0.75));
       };
@@ -445,10 +447,65 @@
       (outings ? '' : '<p class="note">Статистика появится после первых записей.</p>') + '</div>');
   }
 
+  // ---------- Лицензия ----------
+  function licState() {
+    const L = S.lic; if (!L || !L.until) return null;
+    const d = Math.floor((new Date(L.until + 'T23:59:59') - Date.now()) / 86400000);
+    const dt = new Date(L.until + 'T12:00').toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+    if (d < 0) return { d, cls: 'nop', text: 'Лицензия просрочена (' + dt + '). Ловить без неё нельзя.' };
+    if (d <= 30) return { d, cls: 'chv', text: 'Лицензия заканчивается через ' + d + ' дн. (' + dt + '). Продлите заранее.' };
+    return { d, cls: 'okp', text: 'Действует до ' + dt };
+  }
+  function licPanel() {
+    const L = S.lic;
+    if (!L) return '<div class="panel"><h3>Моя лицензия</h3><p>Сохраните фото и срок лицензии: её можно быстро показать при проверке, а приложение напомнит о продлении.</p>' +
+      '<button class="btn pri" data-act="licedit">Добавить лицензию</button></div>';
+    const ls = licState();
+    return '<div class="panel"><h3>Моя лицензия</h3>' +
+      (L.num ? '<p>№ <b>' + esc(L.num) + '</b>' + (L.holder ? ' · ' + esc(L.holder) : '') + '</p>' : '') +
+      (ls ? '<p class="verdict ' + (ls.d < 0 ? 'nov' : ls.d <= 30 ? 'chv' : 'okv') + '">' + esc(ls.text) + '</p>' : '') +
+      '<div class="btns"><button class="btn pri" data-act="licshow">Показать лицензию</button><button class="btn" data-act="licedit">Изменить</button></div></div>';
+  }
+  function licShow() {
+    const L = S.lic || {}, ls = licState();
+    modal('<div class="sheet"><button type="button" class="close" data-act="close">✕</button><h2>Лицензия на рыбалку</h2>' +
+      '<p>' + (L.num ? '№ <b>' + esc(L.num) + '</b>' : '') + (L.holder ? ' · ' + esc(L.holder) : '') + '</p>' +
+      (ls ? '<p class="verdict ' + (ls.d < 0 ? 'nov' : ls.d <= 30 ? 'chv' : 'okv') + '">' + esc(ls.text) + '</p>' : '') +
+      (L.p1 ? '<img class="licimg" data-photo="lic1" alt="Лицензия, лицевая сторона">' : '') +
+      (L.p2 ? '<img class="licimg" data-photo="lic2" alt="Лицензия, обратная сторона">' : '') +
+      (!L.p1 && !L.p2 ? '<p class="note">Фото не добавлено. Нажмите «Изменить», чтобы его добавить.</p>' : '') +
+      '<p class="muted">Носите с собой и документ с фото (NIE или паспорт).</p></div>');
+    loadPhotos();
+  }
+  function licEdit() {
+    const L = S.lic || {};
+    modal('<form class="sheet" id="licform"><button type="button" class="close" data-act="close">✕</button><h2>Моя лицензия</h2>' +
+      '<label>Номер лицензии<input name="num" value="' + esc(L.num || '') + '" autocomplete="off"></label>' +
+      '<label>На чьё имя<input name="holder" value="' + esc(L.holder || '') + '"></label>' +
+      '<label>Действует до<input name="until" type="date" value="' + esc(L.until || '') + '"></label>' +
+      '<label>Фото лицевой стороны' + (L.p1 ? ' (сохранено, можно заменить)' : '') + '<input name="p1" type="file" accept="image/*,application/pdf"></label>' +
+      '<label>Фото обратной стороны (если есть)' + (L.p2 ? ' (сохранено)' : '') + '<input name="p2" type="file" accept="image/*"></label>' +
+      '<p class="muted" style="font-size:13px">Можно сделать скриншот лицензии из письма или PDF и выбрать его здесь.</p>' +
+      '<button class="btn pri wide">Сохранить</button>' + (S.lic ? '<button type="button" class="link danger" data-act="licdel">Удалить лицензию</button>' : '') + '</form>');
+    const form = $('#licform');
+    form.onsubmit = async e => {
+      e.preventDefault();
+      const fd = new FormData(form), lic = Object.assign({}, L, { num: fd.get('num').trim(), holder: fd.get('holder').trim(), until: fd.get('until') });
+      for (const k of ['p1', 'p2']) {
+        const f = fd.get(k);
+        if (f && f.size) {
+          if (!/^image\//.test(f.type)) { toast('Выберите фото или скриншот, PDF не подходит'); return; }
+          const data = await shrink(f, 1800); if (data) { await photoDB.put(k === 'p1' ? 'lic1' : 'lic2', data); lic[k] = true; }
+        }
+      }
+      S.lic = lic; store.set('lic', lic); closeModal(); render(); toast('Лицензия сохранена');
+    };
+  }
+
   // ---------- Ещё ----------
   function viewMore() {
     const st = S.settings;
-    return '<header class="top"><h1>Ещё</h1></header><div class="panel"><h3>Уведомления</h3>' +
+    return '<header class="top"><h1>Ещё</h1></header>' + licPanel() + '<div class="panel"><h3>Уведомления</h3>' +
       '<p>Вечером (после 18:00) приложение напомнит, где завтра лучший шанс. Работает, когда приложение установлено на главный экран.</p>' +
       '<button class="btn ' + (st.notif ? '' : 'pri') + '" data-act="notif">' + (st.notif ? 'Выключить' : 'Включить уведомления') + '</button></div>' +
       '<div class="panel"><h3>Дом</h3><p>' + esc(st.home.name) + ' (' + st.home.lat.toFixed(3) + ', ' + st.home.lon.toFixed(3) + ')</p>' +
@@ -462,12 +519,12 @@
       '<li>Пляжи 1 мая – 30 сен: нельзя с 7:00 до 22:00. Не ближе 100 м к купающимся и 250 м к сетям. Не в портах.</li>' +
       '<li><a target="_blank" rel="noopener" href="' + C.RULES_URL + '">Cuaderno de pesca recreativa 2026</a> · <a target="_blank" rel="noopener" href="https://www.caib.es/sites/reservesmarines/es/mapa/">Карта заповедников</a></li>' +
       '<li>Погода: Open-Meteo. Карта: OpenStreetMap.</li><li>Сомнения по заповедникам: 971 176 100.</li></ul></div>' +
-      '<p class="foot">Рыбалка Майорка · версия 1.1 · данные хранятся только в этом телефоне.</p>';
+      '<p class="foot">Рыбалка Майорка · версия 1.2 · данные хранятся только в этом телефоне.</p>';
   }
 
   async function doExport() {
     const photos = await photoDB.all();
-    const data = JSON.stringify({ v: 1, at: new Date().toISOString(), custom: S.custom, edits: S.edits, hidden: S.hidden, journal: S.journal, settings: S.settings, parks: S.parks, photos });
+    const data = JSON.stringify({ v: 1, at: new Date().toISOString(), custom: S.custom, edits: S.edits, hidden: S.hidden, journal: S.journal, settings: S.settings, parks: S.parks, lic: S.lic, photos });
     const name = 'rybalka-' + C.ymd(new Date()) + '.json';
     // Внутри claude.ai файл отдаётся через платформу
     if (window.claude && typeof window.claude.use === 'function') {
@@ -489,8 +546,8 @@
       const d = JSON.parse(await file.text());
       if (!d || d.v !== 1) throw new Error();
       if (!confirm('Заменить текущие точки и журнал данными из файла?')) return;
-      S.custom = d.custom || []; S.edits = d.edits || {}; S.hidden = d.hidden || []; S.journal = d.journal || []; S.parks = d.parks || {}; S.settings = Object.assign(S.settings, d.settings || {});
-      ['custom', 'edits', 'hidden', 'journal', 'settings', 'parks'].forEach(k => store.set(k, S[k]));
+      S.custom = d.custom || []; S.edits = d.edits || {}; S.hidden = d.hidden || []; S.journal = d.journal || []; S.parks = d.parks || {}; S.lic = d.lic || S.lic; S.settings = Object.assign(S.settings, d.settings || {});
+      ['custom', 'edits', 'hidden', 'journal', 'settings', 'parks', 'lic'].forEach(k => store.set(k, S[k]));
       for (const [k, v] of Object.entries(d.photos || {})) await photoDB.put(k, v);
       toast('Данные загружены'); render(); loadWeather(true);
     } catch (e) { toast('Файл не подошёл'); }
@@ -536,7 +593,10 @@
       };
       cf.onsubmit = run;
     }
-    document.querySelectorAll('img[data-photo]').forEach(async img => { const d = await photoDB.get(img.dataset.photo); if (d) img.src = d; else img.remove(); });
+    loadPhotos();
+  }
+  function loadPhotos() {
+    document.querySelectorAll('img[data-photo]:not([src])').forEach(async img => { const d = await photoDB.get(img.dataset.photo); if (d) img.src = d; else img.remove(); });
   }
 
   document.addEventListener('click', e => {
@@ -566,6 +626,9 @@
       case 'delentry': if (confirm('Удалить запись?')) { const eid = t.dataset.id; S.journal = S.journal.filter(x => x.id !== eid); store.set('journal', S.journal); photoDB.del(eid); render(); } break;
       case 'notif': toggleNotif(); break;
       case 'export': doExport(); break;
+      case 'licedit': licEdit(); break;
+      case 'licshow': licShow(); break;
+      case 'licdel': if (confirm('Удалить лицензию из приложения?')) { S.lic = null; store.set('lic', null); photoDB.del('lic1'); photoDB.del('lic2'); closeModal(); render(); } break;
       case 'sethome': geo(p => { S.settings.home = { lat: p.lat, lon: p.lon, name: 'Мой дом' }; store.set('settings', S.settings); render(); toast('Дом сохранён'); }); break;
     }
   });
