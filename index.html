@@ -72,6 +72,54 @@ img.licimg{display:block;width:100%;border-radius:10px;margin:10px 0;border:1px 
 #toast{position:fixed;left:16px;right:16px;bottom:calc(80px + env(safe-area-inset-bottom));background:#14212b;color:#fff;padding:12px 14px;border-radius:10px;z-index:1100;text-align:center}
 #toast[hidden]{display:none}
 </style>
+<style id="v2">
+/* Дизайн v2 */
+:root{--bg:#edf2f6;--card:#fff;--ink:#0f1d26;--muted:#5d6f7d;--line:#dde6ec;--pri:#0b7cc0;--top:#0b3550;--top2:#0f5079;
+--good:#16a34a;--ok:#ca8a04;--bad:#ea580c;--no:#94a3ae;--tg-bg:#e3f6ea;--tg:#166534;--tb-bg:#fdeee3;--tb:#9a3412;--shadow:0 1px 2px rgba(15,29,38,.06),0 4px 14px rgba(15,29,38,.05)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#061017;--card:#0e1b24;--ink:#e6eef4;--muted:#8a9eac;--line:#1b2c38;--pri:#4cb3f0;--top:#081a26;--top2:#0b2737;
+--good:#22c55e;--ok:#eab308;--bad:#f97316;--no:#5b6b77;--tg-bg:rgba(34,197,94,.13);--tg:#86efac;--tb-bg:rgba(249,115,22,.13);--tb:#fdba74;--shadow:none}}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.top{background:linear-gradient(180deg,var(--top2),var(--top));padding-bottom:12px}
+.top h1{font-size:24px;letter-spacing:-.2px;margin-bottom:10px}
+.seg{background:none;border-bottom:1px solid rgba(255,255,255,.14);border-radius:0;padding:0}
+.seg button{border-radius:0;padding:9px 4px 10px;color:rgba(255,255,255,.7);border-bottom:2.5px solid transparent;margin-bottom:-1px}
+.seg button.on{background:none;color:#fff;border-bottom-color:#5cc2ff}
+.chips{gap:7px;margin-top:9px}
+.chip{border-color:rgba(255,255,255,.18);background:rgba(255,255,255,.07);padding:6px 12px;font-size:13px;color:#e4f0f8}
+.chip.on{background:#fff;color:#0b3550;border-color:#fff;font-weight:600}
+.top .sub{margin-top:10px;font-size:12.5px;color:#b5cfe0}
+.list{gap:10px;padding:12px}
+.card{border-radius:16px;padding:14px 14px 12px;gap:14px;box-shadow:var(--shadow);border-color:var(--line)}
+.card{flex-wrap:wrap;align-items:center;row-gap:0}.cinfo{flex-basis:100%;min-width:0}.cinfo>.muted{margin-top:6px}.metrics:last-child{border-bottom:0;padding-bottom:0}
+.m span .arr{display:inline-block;font-size:12px;margin:0}
+.chead{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.cname{font-size:16.5px;line-height:1.25;letter-spacing:-.1px}
+.wintime{flex:none;font-weight:700;font-size:13px;font-variant-numeric:tabular-nums;color:var(--pri);background:color-mix(in srgb,var(--pri) 12%,transparent);border-radius:8px;padding:3px 8px;margin-top:1px}
+.cmeta{margin-top:2px}
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:10px;padding:8px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.m{display:flex;align-items:center;gap:7px;min-width:0}.m>div{min-width:0}
+.m i{flex:none;width:26px;height:26px;border-radius:8px;background:var(--bg);display:grid;place-items:center;color:var(--pri)}
+.m svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.m b{display:block;font-size:15px;font-variant-numeric:tabular-nums;white-space:nowrap}.m b small{font-size:11px;font-weight:500;color:var(--muted)}
+.m span{display:block;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m .arr{font-size:13px;margin-right:1px}
+.tags{gap:5px;margin-top:9px}
+.tags span{border:0;border-radius:7px;padding:2px 8px;font-size:12px;font-weight:500;background:var(--bg);color:var(--muted)}
+.tags span.tg{background:var(--tg-bg);color:var(--tg)}.tags span.tb{background:var(--tb-bg);color:var(--tb)}
+.ring{background:none!important;flex:none;position:relative;width:56px;height:56px;display:grid;place-items:center}
+.ring svg{position:absolute;inset:0;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:5}.ring .trk{stroke:var(--line)}.ring .val{stroke-linecap:round}
+.ring b{font-size:19px;font-weight:800;font-variant-numeric:tabular-nums}
+.ring.good .val{stroke:var(--good)}.ring.good b{color:var(--good)}
+.ring.ok .val{stroke:var(--ok)}.ring.ok b{color:var(--ok)}
+.ring.bad .val{stroke:var(--bad)}.ring.bad b{color:var(--bad)}
+.ring.no b{color:var(--no)}
+.tabbar{border-top-color:var(--line);padding-top:4px}
+.tabbar button{gap:3px}.tabbar button svg{width:40px;height:26px;padding:3px 9px;border-radius:13px;box-sizing:border-box}
+.tabbar button.on svg{background:color-mix(in srgb,var(--pri) 16%,transparent)}
+.panel,.fishcard,.entry{border-radius:16px;box-shadow:var(--shadow)}
+.btn{border-radius:12px}
+</style>
 </head>
 <body>
 <main id="app"></main>

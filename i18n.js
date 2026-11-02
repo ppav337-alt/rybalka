@@ -5,6 +5,13 @@
   try { lang = root.localStorage && root.localStorage.getItem('ryb_lang') || 'ru'; } catch (e) {}
   if (!LANGS[lang]) lang = 'ru';
   var D = {
+"штиль":["calm", "calm", "calma"],
+"слабая":["light", "slab", "débil"],
+"умеренная":["moderate", "moderat", "moderada"],
+"сильная":["strong", "puternic", "fuerte"],
+"тёплая":["warm", "caldă", "cálida"],
+"комфортная":["pleasant", "plăcută", "agradable"],
+"прохладная":["cool", "răcoroasă", "fresca"],
 "Вне заповедника": [
 "Outside reserve",
 "În afara rezervației",
