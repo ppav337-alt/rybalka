@@ -543,7 +543,7 @@
       T('<li>Пляжи 1 мая – 30 сен: нельзя с 7:00 до 22:00. Не ближе 100 м к купающимся и 250 м к сетям. Не в портах.</li>') +
       '<li><a target="_blank" rel="noopener" href="' + C.RULES_URL + T('">Cuaderno de pesca recreativa 2026</a> · <a target="_blank" rel="noopener" href="https://www.caib.es/sites/reservesmarines/es/mapa/">Карта заповедников</a></li>') +
       T('<li>Погода: Open-Meteo. Карта: OpenStreetMap.</li><li>Сомнения по заповедникам: 971 176 100.</li></ul></div>') +
-      T('<p class="foot">Рыбалка Майорка · версия 1.3 · данные хранятся только в этом телефоне.</p>');
+      T('<p class="foot">Рыбалка Майорка · версия 1.4 · данные хранятся только в этом телефоне.</p>');
   }
 
   async function doExport() {

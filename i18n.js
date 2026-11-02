@@ -2487,10 +2487,10 @@
 "<li>Vremea: Open-Meteo. Harta: OpenStreetMap.</li><li>Întrebări despre rezervații: 971 176 100.</li></ul></div>",
 "<li>Tiempo: Open-Meteo. Mapa: OpenStreetMap.</li><li>Dudas sobre reservas: 971 176 100.</li></ul></div>"
 ],
-"<p class=\"foot\">Рыбалка Майорка · версия 1.3 · данные хранятся только в этом телефоне.</p>": [
-"<p class=\"foot\">Mallorca Fishing · version 1.3 · data is stored only on this phone.</p>",
-"<p class=\"foot\">Pescuit Mallorca · versiunea 1.3 · datele sunt stocate doar pe acest telefon.</p>",
-"<p class=\"foot\">Pesca Mallorca · versión 1.3 · los datos se guardan solo en este teléfono.</p>"
+"<p class=\"foot\">Рыбалка Майорка · версия 1.4 · данные хранятся только в этом телефоне.</p>": [
+"<p class=\"foot\">Mallorca Fishing · version 1.4 · data is stored only on this phone.</p>",
+"<p class=\"foot\">Pescuit Mallorca · versiunea 1.4 · datele sunt stocate doar pe acest telefon.</p>",
+"<p class=\"foot\">Pesca Mallorca · versión 1.4 · los datos se guardan solo en este teléfono.</p>"
 ],
 "Файл сохранён": [
 "File saved",
