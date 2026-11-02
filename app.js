@@ -49,6 +49,8 @@
     hidden: store.get('hidden', []),
     journal: store.get('journal', []),
     settings: store.get('settings', { home: { lat: 39.7016, lon: 3.1037, name: 'Santa Margalida' }, filter: 'all', notif: false }),
+    parks: store.get('parks', {}),          // свои отметки парковки {id:{lat,lon}}
+    fishView: 'fish',
     wx: store.get('wx', null),                // { at, ids:[], data:[...] }
     loading: false, err: null
   };
@@ -106,9 +108,12 @@
     const key = dayKey(off);
     return weatherSpots().map(s => {
       const wx = wxFor(s.id); if (!wx) return { s, b: null };
-      return { s, b: C.bestWindow(s, wx, key, off === 0 ? Date.now() : 0), wx };
+      return { s, b: C.bestWindow(s, wx, key, off === 0 ? Date.now() : 0, curTech()), wx };
     }).sort((a, b) => ((b.b && !b.b.closed ? b.b.score : -1) - (a.b && !a.b.closed ? a.b.score : -1)));
   }
+
+  const curTech = () => (S.settings.tech && S.settings.tech !== 'all') ? S.settings.tech : null;
+  const spotTech = s => s.tech || [];
 
   // ---------- Рендер ----------
   const app = () => $('#app');
@@ -120,8 +125,8 @@
   }
 
   function filterSpots(list) {
-    const f = S.settings.filter;
-    return list.filter(x => f === 'all' || (f === 'beach' && x.s.type === 'beach') || (f === 'rock' && x.s.type === 'rock') ||
+    const f = S.settings.filter, t = curTech();
+    return list.filter(x => !t || spotTech(x.s).includes(t)).filter(x => f === 'all' || (f === 'beach' && x.s.type === 'beach') || (f === 'rock' && x.s.type === 'rock') ||
       (f === 'near' && km(S.settings.home, x.s) <= 30) || f === x.s.depth);
   }
 
@@ -133,6 +138,9 @@
       '</div><div class="chips">' +
       [['all', 'Все'], ['near', 'До 30 км'], ['beach', 'Пляж'], ['rock', 'Скалы'], ['shallow', '0–5 м'], ['mid', '5–15 м'], ['deep', '15+ м']]
         .map(([k, t]) => '<button data-filter="' + k + '" class="chip ' + (S.settings.filter === k ? 'on' : '') + '">' + t + '</button>').join('') +
+      '</div><div class="chips">' +
+      [['all', 'Любая ловля']].concat(Object.entries(C.TECH).map(([k, v]) => [k, v.icon + ' ' + v.name]))
+        .map(([k, t]) => '<button data-tech="' + k + '" class="chip ' + ((S.settings.tech || 'all') === k ? 'on' : '') + '">' + t + '</button>').join('') +
       '</div><div class="sub">Луна: ' + C.moonName(moon) + ' · ' + C.DOW[new Date(Date.now() + S.day * 86400000).getDay()] +
       (S.wx ? ' · прогноз ' + new Date(S.wx.at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '') +
       ' <button class="link" data-act="refresh">обновить</button></div></header>';
@@ -158,7 +166,8 @@
   function card(s, badge, info, dist) {
     return '<button class="card" data-spot="' + esc(s.id) + '">' + badge + '<div class="cbody"><div class="cname">' + esc(s.name) +
       (s.src === 'mine' ? ' <small>моя</small>' : '') + '</div><div class="cmeta">' + esc(s.area || '') + ' · ' + (s.type === 'beach' ? 'пляж' : 'скалы') + ' · ' +
-      ({ shallow: '0–5 м', mid: '5–15 м', deep: '15+ м' }[s.depth] || '') + ' · ' + dist + ' км</div>' + info + '</div></button>';
+      ({ shallow: '0–5 м', mid: '5–15 м', deep: '15+ м' }[s.depth] || '') + ' · ' + dist + ' км' +
+      (spotTech(s).length ? ' · ' + spotTech(s).map(k => C.TECH[k] ? C.TECH[k].icon : '').join('') : '') + '</div>' + info + '</div></button>';
   }
 
   // ---------- Карточка точки ----------
@@ -169,15 +178,23 @@
       '<div class="cmeta">' + esc(s.area || '') + ' · ' + (s.type === 'beach' ? 'пляж' : 'скалы') + ' · ' + ({ shallow: '0–5 м', mid: '5–15 м', deep: '15+ м' }[s.depth] || '') +
       ' · ' + km(S.settings.home, s) + ' км от дома</div>';
     if (s.warn) h += '<p class="warn">' + esc(s.warn) + '</p>';
-    h += '<div class="btns"><a class="btn pri" target="_blank" rel="noopener" href="' + mapsLink(s) + '">Маршрут</a>' +
+    h += '<div class="btns"><a class="btn pri" target="_blank" rel="noopener" href="' + parkRoute(s) + '">🚗 Маршрут к парковке</a>' +
+      (s.lat != null ? '<a class="btn" target="_blank" rel="noopener" href="' + mapsLink(s) + '&travelmode=walking">🚶 К месту ловли</a>' : '') +
       '<button class="btn" data-act="addcatch" data-spot="' + esc(s.id) + '">Записать улов</button>' +
       (s.lat == null ? '<a class="btn" target="_blank" rel="noopener" href="' + searchLink(s) + '">Найти на карте</a>' : '') + '</div>';
     h += '<h3>Режим</h3><p><b>' + esc(res.name) + '.</b> ' + esc(res.note) + (res.url ? ' <a target="_blank" rel="noopener" href="' + res.url + '">Правила</a>' : '') + '</p>';
     const L = C.legal(s, new Date(key + 'T12:00'));
     if (!L.ok) h += '<p class="warn">' + esc(L.why) + '</p>';
-    h += '<h3>Рыба и снасти</h3><p>' + esc(s.fish) + '<br><span class="muted">' + esc(s.methods) + '</span></p><ul class="tips">' +
-      C.tackle(s, new Date(key + 'T12:00')).map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>';
-    h += '<h3>Парковка</h3><p>' + esc(s.parking || '—') + ' <a target="_blank" rel="noopener" href="' + searchLink(s) + '">карта</a></p>';
+    h += '<h3>Парковка</h3><p>' + esc(s.parking || '—') + (parkOf(s) ? ' <b>· отмечена вами на карте</b>' : ' <span class="muted">(поиск по названию)</span>') +
+      '</p><div class="btns"><button class="btn" data-act="setpark" data-spot="' + esc(s.id) + '">📍 ' + (parkOf(s) ? 'Изменить' : 'Отметить') + ' мою парковку</button></div>';
+    h += '<h3>Рыба</h3><p>' + esc(s.fish) + '</p>';
+    const techs = spotTech(s);
+    if (techs.length) {
+      h += '<h3>Чем ловить здесь</h3>';
+      techs.forEach((k, n) => { h += techCard(k, n === 0 || k === curTech()); });
+    }
+    const seas = C.tackle(s, new Date(key + 'T12:00'), true);
+    if (seas.length) h += '<h3>Сейчас в сезоне</h3><ul class="tips">' + C.tackle(s, new Date(key + 'T12:00'), true).map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>';
     if (wx) {
       const di = wx.days.indexOf(key);
       h += '<h3>Прогноз по часам · ' + (['сегодня', 'завтра', 'послезавтра'][S.day]) + '</h3>';
@@ -185,13 +202,13 @@
       h += '<div class="hours">';
       wx.t.forEach((t, i) => {
         if (t.slice(0, 10) !== key) return;
-        const r = C.hourScore(s, wx, i);
+        const r = C.hourScore(s, wx, i, curTech() && spotTech(s).includes(curTech()) ? curTech() : null);
         h += '<div class="hr ' + (r.legal.ok ? '' : 'off') + '"><div class="bar ' + scoreClass(r.score) + '" style="height:' + Math.max(4, r.score) + '%"></div><div class="hl">' + t.slice(11, 13) + '</div></div>';
       });
       h += '</div><table class="wx"><tr><th>Час</th><th>Ветер</th><th>Порыв</th><th>Волна</th><th>Вода</th><th>Давл.</th><th>Оценка</th></tr>';
       wx.t.forEach((t, i) => {
         if (t.slice(0, 10) !== key || (+t.slice(11, 13)) % 3) return;
-        const r = C.hourScore(s, wx, i);
+        const r = C.hourScore(s, wx, i, curTech() && spotTech(s).includes(curTech()) ? curTech() : null);
         h += '<tr><td>' + t.slice(11, 16) + '</td><td>' + dirArrow(wx.dir[i]) + Math.round(wx.wind[i]) + '</td><td>' + Math.round(wx.gust[i]) + '</td><td>' +
           (wx.wave[i] != null ? wx.wave[i].toFixed(1) : '—') + '</td><td>' + (wx.sst[i] != null ? Math.round(wx.sst[i]) + '°' : '—') + '</td><td>' +
           Math.round(wx.press[i]) + '</td><td><span class="badge sm ' + scoreClass(r.score) + '">' + (r.legal.ok ? r.score : '✕') + '</span></td></tr>';
@@ -211,6 +228,20 @@
     return Object.entries(c).sort((a, b) => b[1] - a[1]).slice(0, 3).map(x => x[0] + ':00').join(', ') || '—';
   }
 
+  function parkOf(s) { return S.parks[s.id] || null; }
+  function parkRoute(s) {
+    const p = parkOf(s);
+    if (p) return 'https://www.google.com/maps/dir/?api=1&destination=' + p.lat + ',' + p.lon + '&travelmode=driving';
+    return 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(s.parkQ || ('parking ' + (s.q || s.name))) + '&travelmode=driving';
+  }
+  function techCard(k, open) {
+    const t = C.TECH[k]; if (!t) return '';
+    return '<details class="fishcard"' + (open ? ' open' : '') + '><summary><b>' + t.icon + ' ' + esc(t.name) + '</b></summary><div class="fbody">' +
+      '<p class="lbl">Снасть</p><ul>' + t.gear.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' +
+      '<p class="lbl">Приманка / наживка</p><ul>' + t.bait.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul>' +
+      '<p><b>Когда:</b> ' + esc(t.when) + '</p><p><b>Сезон:</b> ' + esc(t.season) + '</p><p class="muted"><b>Правила:</b> ' + esc(t.rules) + '</p></div></details>';
+  }
+
   // ---------- Модальное окно ----------
   function modal(html) {
     let m = $('#modal'); m.innerHTML = '<div class="backdrop" data-act="close"></div>' + html; m.hidden = false;
@@ -224,7 +255,9 @@
   function viewMap() {
     app().innerHTML = '<header class="top"><h1>Карта точек</h1><div class="btns">' +
       '<button class="btn pri" data-act="pickadd">+ Точка касанием</button><button class="btn" data-act="geoadd">+ Где я стою</button></div>' +
-      (pickMode ? '<p class="note">' + (pickMode.type === 'add' ? 'Коснитесь карты, где новая точка.' : 'Коснитесь точного места для «' + esc(spotById(pickMode.id).name) + '».') +
+      '<div class="chips">' + [['all', 'Любая ловля']].concat(Object.entries(C.TECH).map(([k, v]) => [k, v.icon + ' ' + v.name]))
+        .map(([k, t]) => '<button data-tech="' + k + '" class="chip ' + ((S.settings.tech || 'all') === k ? 'on' : '') + '">' + t + '</button>').join('') + '</div>' +
+      (pickMode ? '<p class="note">' + (pickMode.type === 'add' ? 'Коснитесь карты, где новая точка.' : pickMode.type === 'park' ? 'Коснитесь карты, где вы ставите машину для «' + esc(spotById(pickMode.id).name) + '».' : 'Коснитесь точного места для «' + esc(spotById(pickMode.id).name) + '».') +
         ' <button class="link" data-act="cancelpick">отмена</button></p>' : '') + '</header><div id="map"></div>' +
       '<p class="foot">Цвет: оценка на ' + ['сегодня', 'завтра', 'послезавтра'][S.day] + '. Серые — нет прогноза или нельзя.</p>';
     bindView();
@@ -234,7 +267,10 @@
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18, attribution: '© OpenStreetMap' }).addTo(map);
     const key = dayKey(S.day);
     allSpots().filter(s => s.lat != null).forEach(s => {
-      const wx = wxFor(s.id), b = wx ? C.bestWindow(s, wx, key, S.day === 0 ? Date.now() : 0) : null;
+      const wx = wxFor(s.id), b = wx ? C.bestWindow(s, wx, key, S.day === 0 ? Date.now() : 0, curTech() && spotTech(s).includes(curTech()) ? curTech() : null) : null;
+      if (curTech() && !spotTech(s).includes(curTech())) return;
+      const pk = parkOf(s);
+      if (pk) L.marker([pk.lat, pk.lon], { icon: L.divIcon({ className: 'pk', html: 'P', iconSize: [20, 20] }) }).addTo(map).bindTooltip('Парковка: ' + s.name);
       const sc = b && !b.closed ? b.score : 0;
       const col = s.noFish ? '#8a8f98' : { good: '#1fb36b', ok: '#e0a400', bad: '#e0533d', no: '#8a8f98' }[scoreClass(sc)];
       const mk = L.circleMarker([s.lat, s.lon], { radius: 10, color: '#fff', weight: 2, fillColor: col, fillOpacity: 1 }).addTo(map);
@@ -247,6 +283,10 @@
       if (!pickMode) return;
       const p = { lat: +e.latlng.lat.toFixed(5), lon: +e.latlng.lng.toFixed(5) };
       if (pickMode.type === 'add') { pickMode = null; spotForm(null, p); }
+      else if (pickMode.type === 'park') {
+        const id = pickMode.id; pickMode = null;
+        S.parks[id] = p; store.set('parks', S.parks); toast('Парковка сохранена'); viewMap(); openSpot(id);
+      }
       else if (pickMode.type === 'move') {
         const id = pickMode.id; pickMode = null;
         const s = S.custom.find(x => x.id === id);
@@ -269,11 +309,12 @@
       '<label>Заповедник<select name="reserve">' + opt(s.reserve, Object.entries(C.RESERVES).map(([k, r]) => [k, r.name])) + '</select></label>' +
       '<label>Рыба<input name="fish" value="' + esc(s.fish) + '"></label><label>Способы ловли<input name="methods" value="' + esc(s.methods) + '"></label>' +
       '<label>Парковка<input name="parking" value="' + esc(s.parking) + '"></label>' +
+      '<p class="lbl">Виды ловли</p><div class="checks">' + Object.entries(C.TECH).map(([k, v]) => '<label class="ck"><input type="checkbox" name="tech" value="' + k + '"' + ((s.tech || []).includes(k) ? ' checked' : '') + '> ' + v.icon + ' ' + v.name + '</label>').join('') + '</div>' +
       '<p class="muted">Координаты: ' + s.lat + ', ' + s.lon + '</p><button class="btn pri wide">Сохранить</button></form>');
     $('#spotform').onsubmit = e => {
       e.preventDefault();
-      const f = Object.fromEntries(new FormData(e.target));
-      f.face = +f.face;
+      const fd = new FormData(e.target), f = Object.fromEntries(fd);
+      f.face = +f.face; f.tech = fd.getAll('tech');
       if (id) Object.assign(s, f);
       else S.custom.push(Object.assign({ id: 'my_' + Date.now(), src: 'mine', area: 'Мои', lat: s.lat, lon: s.lon, q: s.lat + ',' + s.lon }, f));
       store.set('custom', S.custom); closeModal(); toast('Точка сохранена'); render(); loadWeather(true);
@@ -283,7 +324,12 @@
   // ---------- Рыбы ----------
   function viewFish() {
     const spots = allSpots().filter(s => !s.noFish), today = new Date();
-    let h = '<header class="top"><h1>Рыбы и правила</h1></header>' +
+    if (S.fishView === 'tech') {
+      return '<header class="top"><h1>Рыбы и снасти</h1><div class="seg"><button data-fv="fish">Рыбы и правила</button><button data-fv="tech" class="on">Снасти по технике</button></div></header>' +
+        '<div class="list">' + Object.keys(C.TECH).map(k => techCard(k, false)).join('') + '</div>' +
+        '<p class="foot">Снасти — практические рекомендации, а не закон. Правила — по Cuaderno de pesca recreativa 2026.</p>';
+    }
+    let h = '<header class="top"><h1>Рыбы и снасти</h1><div class="seg"><button data-fv="fish" class="on">Рыбы и правила</button><button data-fv="tech">Снасти по технике</button></div></header>' +
       '<form class="panel" id="checkform"><h3>Проверить улов</h3><div class="row"><label>Вид<select name="fish">' +
       C.FISH.map(f => '<option value="' + f.id + '">' + esc(f.ru) + '</option>').join('') + '</select></label>' +
       '<label>Точка<select name="spot"><option value="">— вне заповедника —</option>' + spots.map(s => '<option value="' + esc(s.id) + '">' + esc(s.name) + '</option>').join('') + '</select></label></div>' +
@@ -299,6 +345,7 @@
         (f.minKg ? '<li>Мин. вес: <b>' + f.minKg + ' кг</b></li>' : '') +
         (f.check ? '<li>Мин. размер: проверить в таблице талий</li>' : '') +
         (f.limit ? '<li>Лимит: <b>' + f.limit + ' шт в день</b></li>' : '') +
+        (f.limitKg ? '<li>Лимит: <b>' + f.limitKg + ' кг в день</b></li>' : '') + (f.dayOnly ? '<li>Только днём</li>' : '') +
         (f.open ? '<li>Можно: ' + (f.openFrom ? f.openFrom : '1.' + String(f.open[0]).padStart(2, '0')) + ' – ' + ({ 12: '31.12', 3: '31.03' }[f.open[1]] || f.open[1]) + '</li>' : '') +
         (f.closed ? '<li>Запрет на Майорке: ' + f.closed.map(m => ['', 'янв', 'фев', 'мар', 'апр', 'май', 'июнь', 'июль', 'авг', 'сен', 'окт', 'ноя', 'дек'][m]).join(', ') + '</li>' : '') +
         (f.mark ? '<li>Пометить: подрезать нижнюю лопасть хвоста</li>' : '') +
@@ -413,12 +460,12 @@
       '<li>Пляжи 1 мая – 30 сен: нельзя с 7:00 до 22:00. Не ближе 100 м к купающимся и 250 м к сетям. Не в портах.</li>' +
       '<li><a target="_blank" rel="noopener" href="' + C.RULES_URL + '">Cuaderno de pesca recreativa 2026</a> · <a target="_blank" rel="noopener" href="https://www.caib.es/sites/reservesmarines/es/mapa/">Карта заповедников</a></li>' +
       '<li>Погода: Open-Meteo. Карта: OpenStreetMap.</li><li>Сомнения по заповедникам: 971 176 100.</li></ul></div>' +
-      '<p class="foot">Рыбалка Майорка · версия 1.0 · данные хранятся только в этом телефоне.</p>';
+      '<p class="foot">Рыбалка Майорка · версия 1.1 · данные хранятся только в этом телефоне.</p>';
   }
 
   async function doExport() {
     const photos = await photoDB.all();
-    const data = JSON.stringify({ v: 1, at: new Date().toISOString(), custom: S.custom, edits: S.edits, hidden: S.hidden, journal: S.journal, settings: S.settings, photos });
+    const data = JSON.stringify({ v: 1, at: new Date().toISOString(), custom: S.custom, edits: S.edits, hidden: S.hidden, journal: S.journal, settings: S.settings, parks: S.parks, photos });
     const name = 'rybalka-' + C.ymd(new Date()) + '.json';
     // Внутри claude.ai файл отдаётся через платформу
     if (window.claude && typeof window.claude.use === 'function') {
@@ -440,8 +487,8 @@
       const d = JSON.parse(await file.text());
       if (!d || d.v !== 1) throw new Error();
       if (!confirm('Заменить текущие точки и журнал данными из файла?')) return;
-      S.custom = d.custom || []; S.edits = d.edits || {}; S.hidden = d.hidden || []; S.journal = d.journal || []; S.settings = Object.assign(S.settings, d.settings || {});
-      ['custom', 'edits', 'hidden', 'journal', 'settings'].forEach(k => store.set(k, S[k]));
+      S.custom = d.custom || []; S.edits = d.edits || {}; S.hidden = d.hidden || []; S.journal = d.journal || []; S.parks = d.parks || {}; S.settings = Object.assign(S.settings, d.settings || {});
+      ['custom', 'edits', 'hidden', 'journal', 'settings', 'parks'].forEach(k => store.set(k, S[k]));
       for (const [k, v] of Object.entries(d.photos || {})) await photoDB.put(k, v);
       toast('Данные загружены'); render(); loadWeather(true);
     } catch (e) { toast('Файл не подошёл'); }
@@ -491,10 +538,12 @@
   }
 
   document.addEventListener('click', e => {
-    const t = e.target.closest('[data-tab],[data-day],[data-filter],[data-act],[data-spot]');
+    const t = e.target.closest('[data-tab],[data-day],[data-filter],[data-tech],[data-fv],[data-act],[data-spot]');
     if (!t) return;
     if (t.dataset.tab) { S.tab = t.dataset.tab; store.set('tab', S.tab); pickMode = null; render(); window.scrollTo(0, 0); return; }
     if (t.dataset.day) { S.day = +t.dataset.day; render(); return; }
+    if (t.dataset.tech) { S.settings.tech = t.dataset.tech; store.set('settings', S.settings); render(); return; }
+    if (t.dataset.fv) { S.fishView = t.dataset.fv; render(); return; }
     if (t.dataset.filter) { S.settings.filter = t.dataset.filter; store.set('settings', S.settings); render(); return; }
     const act = t.dataset.act, id = t.dataset.spot;
     if (!act && id) { openSpot(id); return; }
@@ -505,6 +554,7 @@
       case 'stats': statsView(); break;
       case 'pickadd': pickMode = { type: 'add' }; viewMap(); break;
       case 'cancelpick': pickMode = null; viewMap(); break;
+      case 'setpark': closeModal(); pickMode = { type: 'park', id }; S.tab = 'map'; store.set('tab', 'map'); render(); toast('Коснитесь карты там, где ставите машину'); break;
       case 'movespot': closeModal(); pickMode = { type: 'move', id }; S.tab = 'map'; render(); break;
       case 'geoadd': geo(p => spotForm(null, p)); break;
       case 'editspot': spotForm(id); break;

@@ -86,8 +86,75 @@
       warn:'Смотровая на обрыве, не рыболовная точка.' },
     { id:'balconet', name:'Mirador des Balconet (ориентир)', area:'Юг', lat:null, lon:null, type:'rock', depth:'deep', face:180, reserve:'migjorn',
       fish:'—', methods:'Не место для рыбалки', parking:'Смотровая площадка', q:'Mirador des Balconet Mallorca', src:'chatgpt', noFish:true,
-      warn:'Смотровая на обрыве. Координаты не известны — откройте поиск на карте.' }
+      warn:'Смотровая на обрыве. Координаты не известны — откройте поиск на карте.' },
+    // голубой краб — вероятные места (солоноватая вода у моря)
+    { id:'crab_muro', name:'Устье канала s\'Albufera (Platja de Muro)', area:'Север', lat:39.7990, lon:3.1170, type:'beach', depth:'shallow', face:45, reserve:'none',
+      fish:'Голубой краб; сибас у устья', methods:'Сачок днём; сёрф ночью', parking:'Парковка у Pont dels Anglesos', q:'Pont dels Anglesos Platja de Muro', src:'atlas',
+      warn:'Только со стороны моря: внутри s\'Oberta и парка s\'Albufera ловить нельзя.', crabOnly:false },
+    { id:'crab_fontanelles', name:'Ses Fontanelles (Can Pastilla)', area:'Юг (Пальма)', lat:39.5345, lon:2.7175, type:'beach', depth:'shallow', face:200, reserve:'none',
+      fish:'Голубой краб', methods:'Сачок днём', parking:'Улицы Can Pastilla', q:'Ses Fontanelles Can Pastilla', src:'atlas',
+      warn:'Место по сообщениям о находках краба, не проверено на месте.' },
+    { id:'crab_albufereta', name:'Albufereta (Pollença) — со стороны моря', area:'Север', lat:39.8565, lon:3.0920, type:'beach', depth:'shallow', face:90, reserve:'none',
+      fish:'Голубой краб', methods:'Сачок днём', parking:'У пляжа Albufereta', q:'Platja de l\'Albufereta Pollença', src:'atlas',
+      warn:'Сама лагуна — природный резерват: ловить только на морском берегу.' }
   ];
+
+
+  // ---------- Техники ловли ----------
+  const TECH = {
+    spin: { name:'Спиннинг', short:'Спин', icon:'🎯',
+      gear:['Удилище 2,7–3,0 м, тест 10–40 г','Катушка 3000–4000, шнур PE 0,8–1,2','Поводок флюорокарбон 0,28–0,35 мм, 1–1,5 м (на луфаря — стальной)'],
+      bait:['Воблеры-минноу 9–12 см (утро, мутная вода)','Стикбейты и попперы 10–14 см (лампуга, луфарь, лича)','Металл/кастмастер 20–40 г для дальнего заброса','Силикон 10–12 см на джиг-головке 10–20 г'],
+      when:'Рассвет и первые 2 часа, закат. Лучше лёгкая рябь и ветер в берег.',
+      season:'Лампуга 15 авг – 31 дек, луфарь сен–ноя, сибас окт–мар, лича лето–осень.',
+      rules:'В заповедниках — 1 снасть на человека; живец обычно запрещён.' },
+    rock: { name:'Рокфишинг', short:'Рок', icon:'🪨',
+      gear:['Лёгкий спиннинг 2,1–2,4 м, тест 1–10 г (LRF) или 5–25 г','Катушка 1000–2500, шнур PE 0,4–0,6','Поводок флюр 0,18–0,25 мм'],
+      bait:['Силикон 2–3" на джиг-головке 3–7 г (сарг, скорпена, морской окунь)','Микроколебалки и микровоблеры 3–5 см','Техника «дроп-шот» и «техас» между камнями','Без спиннинга: поплавок 1–3 г, креветка или мидия из магазина'],
+      when:'Утро и вечер, пасмурно. Ловить вдоль стенки и в белой воде у камней.',
+      season:'Круглый год; сарг лучше осень–весна.',
+      rules:'Минимальные размеры сарга 23 см, дорады 20 см (35 см в заповеднике).' },
+    surf: { name:'Сёрфкастинг', short:'Сёрф', icon:'🏖',
+      gear:['Удилище 4,2–4,5 м, тест 100–200 г, 2 удилища максимум','Катушка 6000–8000 с длинной шпулей, леска 0,25–0,30 или шнур + шок-лидер 0,50','Груз 80–150 г (пирамида или с якорями при течении)'],
+      bait:['Монтаж «падаюший» или 2 поводка, крючок №2–6','Наживка: покупные черви (корея, американа, тита), креветка, сардина, кальмар','Ночью и после шторма — сардина/кальмар на сибаса и дораду'],
+      when:'Ночь, рассвет, мутная вода после шторма, волна 0,3–1,0 м.',
+      season:'Лучше всего октябрь–апрель. Летом пляжи открыты только с 22:00 до 7:00.',
+      rules:'Пляж 1 мая – 30 сен: нельзя с 7:00 до 22:00, не ближе 100 м к купающимся.' },
+    squid: { name:'Кальмар (эгинг)', short:'Кальмар', icon:'🦑',
+      gear:['Удилище для эгинга 2,4–2,6 м, тест под эги 2.5–3.5','Катушка 2500–3000, шнур PE 0,6–0,8','Поводок флюр 0,22–0,28 мм, 1,5–2 м'],
+      bait:['Эги 2.5 (мелко, спокойно), 3.0 (стандарт), 3.5 (глубина/ветер)','Цвета: днём натуральные, на закате оранжевый/розовый, ночью светящиеся','Проводка: 2–3 рывка вверх и пауза 5–10 с — поклёвка на паузе'],
+      when:'Закат и первые 2–3 часа темноты, тихая прозрачная вода, волна до 0,8 м.',
+      season:'Октябрь – февраль (пик ноябрь–январь). Каракатица — весна.',
+      rules:'До 10 кальмаров/каракатиц в день, 1 эги на снасть. Фонарь для привлечения запрещён.' },
+    crab: { name:'Голубой краб', short:'Краб', icon:'🦀',
+      gear:['Разрешено: сачок (salabre) и острога (fisga), ловля с берега пешком или в апноэ','Запрещено: ловушки, верши (nasas), сети'],
+      bait:['Подманить: рыбьи головы, курица, сардина у кромки воды — брать сачком','Ищите в солоноватой воде: устья торрентов и каналов, лагуны у моря, тихие бухты'],
+      when:'Только днём: сбор морепродуктов запрещён от заката до восхода. Лучше тёплые месяцы.',
+      season:'Июнь – октябрь, когда вода тёплая; зимой краб малоактивен.',
+      rules:'Лицензия обязательна. До 2 кг в день, не суммируется с рыбой. Продажа запрещена. Внутри s\'Oberta (s\'Albufera) и в парке Mondragó ловить нельзя.' }
+  };
+  const SPOT_TECH = {
+    sonserra:['surf','crab'], picafort:['surf','crab'], alcanada:['rock','squid','spin'], betlem:['spin','rock','squid'],
+    estrenc:['surf'], malpas:['spin','rock','squid'], namer:['rock','squid','spin'], portocolom:['squid','rock'],
+    santvicenc:['spin','squid','rock'], calablava:['rock','squid','spin'], capdepera:['spin','rock'], soller:['squid','spin','rock'],
+    formentor:['spin','rock'], salines:['rock'], figuera:['spin','squid','rock'], santelm:['spin','squid','rock'],
+    canonge:['rock','spin'], valldemossa:['rock','spin'], banyalbufar:['rock','spin'], calobra:['rock','spin'],
+    figueraformentor:['rock','squid'], delta:['rock','spin','squid'], songranada:['rock','spin'], clotsase:['surf','rock'],
+    almunia:['rock'], llombards:['surf'], pontas:[], balconet:[],
+    crab_muro:['crab','surf'], crab_fontanelles:['crab'], crab_albufereta:['crab']
+  };
+  const PARK_Q = {
+    sonserra:'Aparcament Son Serra de Marina platja', picafort:'Aparcament Son Bauló Can Picafort', alcanada:'Aparcament Platja d\'Alcanada',
+    betlem:'Betlem Artà aparcament', estrenc:'Aparcament Ses Covetes Es Trenc', malpas:'Aparcament Mal Pas Bonaire Alcúdia',
+    namer:'Aparcament Punta de n\'Amer Sa Coma', portocolom:'Far de Portocolom', santvicenc:'Aparcament Cala Sant Vicenç',
+    calablava:'Cala Blava Llucmajor', capdepera:'Far de Capdepera aparcament', soller:'Aparcament Far de sa Creu Port de Sóller',
+    formentor:'Aparcament Far de Formentor', salines:'Aparcament Far de ses Salines', figuera:'Aparcament Cala Figuera Santanyí',
+    santelm:'Aparcament Sant Elm', canonge:'Port des Canonge aparcament', valldemossa:'Port de Valldemossa aparcament',
+    banyalbufar:'Banyalbufar aparcament', calobra:'Aparcament Sa Calobra', figueraformentor:'Cala Figuera Formentor aparcament',
+    delta:'Cala Delta Llucmajor', songranada:'Son Granada de Baix Llucmajor', clotsase:'Sa Ràpita aparcament',
+    almunia:'Aparcament Caló des Moro Cala s\'Almunia', llombards:'Aparcament Cala Llombards',
+    crab_muro:'Aparcament Pont dels Anglesos Platja de Muro', crab_fontanelles:'Ses Fontanelles Can Pastilla', crab_albufereta:'Platja de l\'Albufereta Pollença'
+  };
 
   // ---------- Справочник рыб ----------
   // min: см (общ.), minRes: см в заповеднике, limit: шт/день, open: [мес_с, мес_по] когда МОЖНО (1–12), closed: [месяцы] когда нельзя
@@ -114,6 +181,8 @@
       tips:'Только от 1 кг, до 3 шт. На Майорке запрет в июне и июле.' },
     { id:'erizo', ru:'Морской ёж', es:'Erizo de mar', ca:'Garota', lat:'Paracentrotus lividus', open:[11,3],
       tips:'1 ноя – 31 мар, глубже 10 м нельзя. Проверить квоту в таблице талий.' },
+    { id:'cangrejo', ru:'Голубой краб', es:'Cangrejo azul', ca:'Cranc blau', lat:'Callinectes sapidus', limitKg:2, dayOnly:true,
+      tips:'Инвазивный вид, ловить можно во всех водах, где разрешена рекреационная рыбалка. Только днём, сачком или острогой, до 2 кг в день. Ловушки и сети запрещены.' },
     { id:'oblada', ru:'Облада', es:'Oblada', ca:'Oblada', lat:'Oblada melanura', check:true,
       tips:'Поплавок с хлебом у поверхности, прикормка. Мин. размер — проверить в таблице талий.' },
     { id:'mabre', ru:'Мабре (херрера)', es:'Herrera', ca:'Mabre', lat:'Lithognathus mormyrus', check:true,
@@ -146,14 +215,16 @@
   const DOW = ['вс','пн','вт','ср','чт','пт','сб'];
 
   // Можно ли ловить в эту дату/час в этой точке
-  function legal(spot, date) {
+  function legal(spot, date, tech, sun) {
     const r = RESERVES[spot.reserve] || RESERVES.none;
     if (spot.noFish) return { ok:false, why:'Не рыболовная точка' };
     if (r.days === null) return { ok:true, unsure:true, why:r.name+': правила не подтверждены' };
     const dow = date.getDay();
     if (!r.days.includes(dow) && !(r.holidays && isHoliday(date)))
       return { ok:false, why:r.name+': сегодня ('+DOW[dow]+') ловить нельзя. Можно: '+r.days.map(x=>DOW[x]).join(', ')+' и праздники' };
-    if (spot.type==='beach') {
+    if (tech==='crab' && sun && (date.getTime()<sun.sr || date.getTime()>sun.ss))
+      return { ok:false, why:'Голубой краб: ловить только днём (от восхода до заката)' };
+    if (spot.type==='beach' && tech!=='crab') {
       const m=date.getMonth()+1, h=date.getHours();
       if (m>=5 && m<=9 && h>=7 && h<22) return { ok:false, why:'Пляж: с 1 мая по 30 сентября нельзя с 7:00 до 22:00' };
     }
@@ -195,6 +266,8 @@
       else lines.push('Лимит '+f.limit+' шт в день, сегодня уже '+todayCount+'.');
     }
     if (inRes && spot.reserve==='palma') lines.push('Badia de Palma: из охраняемых видов — 1 рыба в день.');
+    if (f.limitKg) lines.push('Лимит '+f.limitKg+' кг в день (не суммируется с рыбой).');
+    if (f.dayOnly && (date.getHours()<7 || date.getHours()>=19)) lines.push('Сбор только днём — проверьте время заката.');
     if (f.check) { unsure=true; lines.push('Минимальный размер этого вида не внесён — проверьте таблицу талий.'); }
     if (keep && f.mark) lines.push('Сразу пометить: подрезать нижнюю лопасть хвоста.');
     if (f.pescarec) lines.push('Записать в приложение PescaREC (даже если отпустили).');
@@ -217,9 +290,11 @@
   // wx = { t:[iso], wind:[], gust:[], dir:[], press:[], cloud:[], rain:[], temp:[], wave:[], wper:[], sst:[], sunrise:[iso], sunset:[iso] }
   function angDiff(a,b){ let d=Math.abs(a-b)%360; return d>180?360-d:d; }
 
-  function hourScore(spot, wx, i) {
+  function hourScore(spot, wx, i, tech) {
     const date = new Date(wx.t[i]);
-    const L = legal(spot, date);
+    const dk = wx.t[i].slice(0,10), dIdx = wx.days.indexOf(dk);
+    const sun = dIdx>=0 ? { sr:new Date(wx.sunrise[dIdx]).getTime(), ss:new Date(wx.sunset[dIdx]).getTime() } : null;
+    const L = legal(spot, date, tech, sun);
     const r = { score:0, legal:L, tags:[], danger:false };
     if (!L.ok) return r;
     let s = 40;
@@ -270,18 +345,27 @@
     if (sst!=null) { if (sst<14) s-=5; else if (sst>=16 && sst<=24) s+=3; }
     // Луна
     const mp = moonPhase(date); if (mp<0.1||mp>0.9||Math.abs(mp-0.5)<0.1) s+=5;
+    // Поправки под технику
+    if (tech && sun) {
+      const t2=date.getTime(), m2=date.getMonth()+1, dusk=Math.abs(t2-sun.ss)/3600000, dark=t2>sun.ss&&t2<sun.ss+3*3600000;
+      if (tech==='squid') { if (dark||dusk<=1) { s+=10; r.tags.push('время кальмара'); } if (wave!=null&&wave>0.8) s-=10; if (!(m2>=10||m2<=2)) s-=10; }
+      if (tech==='spin') { if (Math.abs(t2-sun.sr)/3600000<=1.5) s+=5; if (wind!=null && wind>25) s-=5; }
+      if (tech==='rock') { if (wave!=null && wave>1.0) s-=10; }
+      if (tech==='surf') { if (wave!=null && wave>=0.3 && wave<=1.0) s+=5; }
+      if (tech==='crab') { s = 40 + (wave!=null && wave<0.5 ? 20 : 0) + ((wx.sst[i]||0)>=20 ? 20 : (wx.sst[i]||0)>=17 ? 10 : -10) + (wind!=null && wind<15 ? 10 : 0); r.tags=[]; if ((wx.sst[i]||0)>=20) r.tags.push('тёплая вода — краб активен'); }
+    }
     if (L.unsure) r.tags.push('правила не подтверждены');
     r.score = Math.max(0, Math.min(100, Math.round(s)));
     return r;
   }
 
   // Лучшее окно (2 часа) на дату для точки
-  function bestWindow(spot, wx, dayKey, fromMs) {
+  function bestWindow(spot, wx, dayKey, fromMs, tech) {
     let best=null;
     for (let i=0;i<wx.t.length-1;i++) {
       if (wx.t[i].slice(0,10)!==dayKey) continue;
       if (fromMs && new Date(wx.t[i]).getTime() < fromMs - 3600000) continue;
-      const a=hourScore(spot,wx,i), b=hourScore(spot,wx,i+1);
+      const a=hourScore(spot,wx,i,tech), b=hourScore(spot,wx,i+1,tech);
       if (!a.legal.ok || !b.legal.ok) continue;
       const avg=(a.score+b.score)/2;
       if (!best || avg>best.score) best={ score:Math.round(avg), i, tags:[...new Set([...a.tags,...b.tags])], danger:a.danger||b.danger, unsure:a.legal.unsure };
@@ -295,10 +379,11 @@
   }
 
   // Подсказка снасти и наживки
-  function tackle(spot, date) {
+  function tackle(spot, date, seasonalOnly) {
     const m = date.getMonth()+1, out=[];
     if (spot.noFish) return ['Не место для рыбалки.'];
-    if (spot.type==='beach') {
+    if (seasonalOnly) {}
+    else if (spot.type==='beach') {
       out.push('Сёрфкастинг 4–4,5 м, груз 80–150 г, поводок 0,25–0,30, крючок №4–6.');
       out.push('Наживка: покупные черви (корея, американа), креветка; ночью сардина.');
       if (m>=10||m<=3) out.push('После шторма в мутной воде — сибас на сардину или воблер 12 см.');
@@ -309,6 +394,8 @@
       out.push('Спиннинг 2,7–3 м, тест 10–40 г, шнур PE 1, флюр 0,30.');
       out.push('Приманки: воблеры 9–12 см, стикбейт, джиг 20–30 г.');
     }
+    if (seasonalOnly && spot.type==='beach' && (m>=10||m<=3)) out.push('После шторма в мутной воде — сибас на сардину или воблер 12 см.');
+    if (seasonalOnly && (spot.tech||[]).includes('crab') && m>=6 && m<=10) out.push('Голубой краб активен: днём, сачком, до 2 кг.');
     if (m>=10 || m<=2) out.push('Кальмар: эги 2.5–3.0 на закате и первые 2 часа темноты.');
     if ((m===8 && date.getDate()>=15) || (m>=9 && m<=12)) out.push('Лампуга: металл 20–30 г, поппер, с мысов утром.');
     if (m>=9 && m<=11 && spot.type==='rock') out.push('Луфарь: стальной поводок, металл, быстрая проводка.');
@@ -344,6 +431,8 @@
     };
   }
 
+  SPOTS.forEach(sp => { sp.tech = SPOT_TECH[sp.id] || []; sp.parkQ = PARK_Q[sp.id] || ''; });
+
   root.FishCore = { RESERVES, SPOTS, FISH, TALLAS_URL, RULES_URL, legal, fishOpen, checkCatch, moonPhase, moonName,
-    hourScore, bestWindow, tackle, parseWeather, weatherUrls, isHoliday, ymd, DOW, angDiff };
+    hourScore, bestWindow, tackle, TECH, parseWeather, weatherUrls, isHoliday, ymd, DOW, angDiff };
 })(typeof self !== 'undefined' ? self : this);
