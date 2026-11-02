@@ -48,7 +48,7 @@
     edits: store.get('edits', {}),            // правки координат встроенных точек
     hidden: store.get('hidden', []),
     journal: store.get('journal', []),
-    settings: store.get('settings', { home: { lat: 39.7016, lon: 3.1037, name: 'Santa Margalida' }, filter: 'all', notif: false }),
+    settings: store.get('settings', { home: { lat: 39.7646, lon: 3.1541, name: 'Can Picafort' }, filter: 'all', notif: false }),
     parks: store.get('parks', {}),          // свои отметки парковки {id:{lat,lon}}
     fishView: 'fish',
     wx: store.get('wx', null),                // { at, ids:[], data:[...] }
@@ -82,6 +82,8 @@
     ? 'https://www.google.com/maps/dir/?api=1&destination=' + s.lat + ',' + s.lon
     : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(s.q || s.name);
   const searchLink = s => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(s.q || s.name);
+
+  if (S.settings.home && S.settings.home.name === 'Santa Margalida') { S.settings.home = { lat: 39.7646, lon: 3.1541, name: 'Can Picafort' }; store.set('settings', S.settings); }
 
   // ---------- Погода ----------
   async function loadWeather(force) {
