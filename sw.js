@@ -1,9 +1,9 @@
 /* Рыбалка Майорка — офлайн и вечерние уведомления */
-const VERSION = 'ryb-v4';
+const VERSION = 'ryb-v5';
 const SHELL = ['./', 'index.html', 'core.js', 'app.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png',
   'lib/leaflet.css',
-  'lib/leaflet.js'];
-importScripts('core.js');
+  'lib/leaflet.js', 'i18n.js'];
+importScripts('i18n.js', 'core.js');
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -38,7 +38,7 @@ self.addEventListener('periodicsync', e => { if (e.tag === 'tomorrow') e.waitUnt
 async function notifyTomorrow() {
   const h = new Date().getHours(); if (h < 17) return;
   const c = await caches.open('ryb-data'); const r = await c.match('/__spots'); if (!r) return;
-  const { spots, notif } = await r.json(); if (!notif || !spots || !spots.length) return;
+  const { spots, notif, lang } = await r.json(); if (lang) I18N.lang = lang; const T = I18N.T; if (!notif || !spots || !spots.length) return;
   const sent = await c.match('/__sent'); const today = FishCore.ymd(new Date());
   if (sent && (await sent.text()) === today) return;
   const u = FishCore.weatherUrls(spots);
@@ -49,7 +49,7 @@ async function notifyTomorrow() {
   spots.forEach((s, k) => { const b = FishCore.bestWindow(s, wx[k], key); if (!b.closed && (!best || b.score > best.b.score)) best = { s, b, w: wx[k] }; });
   if (!best) return;
   const t = best.w.t[best.b.i].slice(11, 16);
-  await self.registration.showNotification('Рыбалка Майорка', { body: 'Завтра лучше всего: ' + best.s.name + ' с ' + t + ' (оценка ' + best.b.score + ')', icon: 'icon-192.png', tag: 'tomorrow' });
+  await self.registration.showNotification(T('Рыбалка Майорка'), { body: T('Завтра лучше всего: ') + best.s.name + T(' с ') + t + T(' (оценка ') + best.b.score + ')', icon: 'icon-192.png', tag: 'tomorrow' });
   await c.put('/__sent', new Response(today));
 }
 self.addEventListener('notificationclick', e => { e.notification.close(); e.waitUntil(self.clients.openWindow('./')); });
