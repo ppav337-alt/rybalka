@@ -248,6 +248,7 @@
     if (!L.ok) h += '<p class="warn">' + esc(L.why) + '</p>';
     h += T('<h3>Парковка</h3><p>') + esc(s.parking || '—') + (S.parks[s.id] ? T(' <b>· отмечена вами на карте</b>') : s.parkPt ? T(' <b>· точка на карте</b>') : T(' <span class="muted">(поиск по названию)</span>')) +
       '</p><div class="btns"><button class="btn" data-act="setpark" data-spot="' + esc(s.id) + '">📍 ' + (S.parks[s.id] ? T('Изменить') : T('Отметить')) + T(' мою парковку</button></div>');
+    if (s.lat != null) h += '<div id="osmbox"></div>';
     h += T('<h3>Рыба</h3><p>') + esc(s.fish) + '</p>';
     const techs = spotTech(s);
     if (techs.length) {
@@ -283,6 +284,69 @@
         : '<button class="btn" data-act="movespot" data-spot="' + esc(s.id) + T('">Уточнить место на карте</button><button class="btn" data-act="hidespot" data-spot="') + esc(s.id) + T('">Скрыть точку</button>')) +
       T('</div><p class="muted">Координаты встроенных точек примерные. Уточните точное место стояния на карте.</p></div>');
     modal(h);
+    osmCheck(s);
+  }
+  // ---------- OpenStreetMap: парковки рядом и проверка берега (запрос идёт с телефона) ----------
+  const osmCache = {};
+  const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter', 'https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
+  async function overpass(q) {
+    for (const u of OVERPASS) {
+      try {
+        const ac = new AbortController(), tm = setTimeout(() => ac.abort(), 25000);
+        const r = await fetch(u, { method: 'POST', body: 'data=' + encodeURIComponent(q), headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, signal: ac.signal });
+        clearTimeout(tm);
+        if (r.ok) return await r.json();
+      } catch (e) { /* пробуем следующий сервер */ }
+    }
+    throw new Error('overpass');
+  }
+  function meters(a, b) { const R = 6371000, r = x => x * Math.PI / 180, dLa = r(b.lat - a.lat), dLo = r(b.lon - a.lon);
+    const h = Math.sin(dLa / 2) ** 2 + Math.cos(r(a.lat)) * Math.cos(r(b.lat)) * Math.sin(dLo / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(h)); }
+  // Ближайшая точка береговой линии к месту (плоское приближение, на сотнях метров точно)
+  function nearestCoast(s, ways) {
+    const kx = Math.cos(s.lat * Math.PI / 180); let best = null;
+    ways.forEach(w => { const g = w.geometry || []; for (let i = 1; i < g.length; i++) {
+      const ax = (g[i - 1].lon - s.lon) * kx, ay = g[i - 1].lat - s.lat, bx = (g[i].lon - s.lon) * kx, by = g[i].lat - s.lat;
+      const dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy; let t = L2 ? -(ax * dx + ay * dy) / L2 : 0; t = Math.max(0, Math.min(1, t));
+      const p = { lat: s.lat + ay + t * dy, lon: s.lon + (ax + t * dx) / kx }, d = meters(s, p);
+      if (!best || d < best.d) best = { d, lat: +p.lat.toFixed(6), lon: +p.lon.toFixed(6) };
+    } });
+    return best;
+  }
+  async function osmCheck(s) {
+    const box = $('#osmbox'); if (!box || s.lat == null) return;
+    const k = s.lat + ',' + s.lon;
+    box.innerHTML = '<p class="muted">' + T('Ищу парковки и берег по OpenStreetMap…') + '</p>';
+    let d = osmCache[k];
+    try {
+      if (!d) {
+        d = await overpass('[out:json][timeout:20];nwr(around:1500,' + k + ')[amenity=parking];out center tags;way(around:1000,' + k + ')[natural=coastline];out geom;');
+        osmCache[k] = d;
+      }
+    } catch (e) { if ($('#osmbox') === box) box.innerHTML = '<p class="muted">' + T('OpenStreetMap сейчас не отвечает. Откройте место ещё раз позже.') + '</p>'; return; }
+    if ($('#osmbox') !== box) return;
+    const els = d.elements || [];
+    const parks = els.filter(e => e.tags && e.tags.amenity === 'parking' && !/^(private|no|customers)$/.test(e.tags.access || ''))
+      .map(e => { const c = e.center || e; return { lat: c.lat, lon: c.lon, name: e.tags.name || '', fee: e.tags.fee, d: meters(s, c) }; })
+      .filter(p => p.lat != null).sort((a, b) => a.d - b.d).slice(0, 4);
+    const coast = nearestCoast(s, els.filter(e => e.type === 'way' && e.tags && e.tags.natural === 'coastline'));
+    let h = '<h3>' + T('Проверка по OpenStreetMap') + '</h3>';
+    if (!coast) h += '<p class="warn">' + T('В 1 км от точки нет морского берега. Точка, скорее всего, стоит неверно.') + '</p>';
+    else if (coast.d > 60) h += '<p class="warn">' + T('Точка в ') + Math.round(coast.d) + T(' м от берега моря. Возможно, она неточная.') + '</p>' +
+      '<div class="btns"><a class="btn" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=' + coast.lat + ',' + coast.lon + '">🗺 ' + T('Ближайший берег') + '</a>' +
+      '<button class="btn" data-act="osmsnap" data-spot="' + esc(s.id) + '" data-lat="' + coast.lat + '" data-lon="' + coast.lon + '">' + T('Сдвинуть точку на берег') + '</button></div>';
+    else h += '<p>✓ ' + T('Точка у самого берега (') + Math.round(coast.d) + T(' м).') + '</p>';
+    if (parks.length) {
+      h += '<p class="lbl">' + T('Парковки рядом (OpenStreetMap)') + '</p><ul class="tips">';
+      parks.forEach(p => {
+        h += '<li><b>' + esc(p.name || T('Парковка')) + '</b> · ' + Math.round(p.d) + T(' м до места') + (p.fee === 'yes' ? T(' · платная') : p.fee === 'no' ? T(' · бесплатная') : '') +
+          '<br><a class="link" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=' + p.lat + ',' + p.lon + '&travelmode=driving">🚗 ' + T('Маршрут') + '</a> · ' +
+          '<button class="link" data-act="osmpark" data-spot="' + esc(s.id) + '" data-lat="' + p.lat + '" data-lon="' + p.lon + '">📍 ' + T('Это моя парковка') + '</button></li>';
+      });
+      h += '</ul>';
+    } else h += '<p class="muted">' + T('В OpenStreetMap нет парковок в 1,5 км от точки.') + '</p>';
+    h += '<p class="muted">' + T('Данные © участники OpenStreetMap. Проверьте на месте.') + '</p>';
+    box.innerHTML = h;
   }
   // ---------- Море, полоска дня, графики ----------
   function homeRoute() { const h = S.settings.home; return 'https://www.google.com/maps/dir/?api=1&destination=' + h.lat + ',' + h.lon + '&travelmode=driving'; }
@@ -732,7 +796,7 @@
       '<a target="_blank" rel="noopener" href="https://www.caib.es/sites/reservesmarines/es/regulacian_de_actividades_0/">Ponent</a></li>' +
       T('<li>Координаты 10 точек и описания 20 парковок сверены по описаниям пляжей (mallorcard.es); ограничения Formentor — по DGT 2026. Остальное примерно, проверяйте на месте.</li>') +
       T('<li>Погода: Open-Meteo. Карта: OpenStreetMap.</li><li>Сомнения по заповедникам: 971 176 100.</li></ul></div>') +
-      T('<p class="foot">Рыбалка Майорка · версия 2.9 · данные хранятся только в этом телефоне.</p>');
+      T('<p class="foot">Рыбалка Майорка · версия 2.10 · данные хранятся только в этом телефоне.</p>');
   }
 
   async function doExport() {
@@ -844,6 +908,10 @@
       case 'pickadd': pickMode = { type: 'add' }; viewMap(); break;
       case 'cancelpick': pickMode = null; viewMap(); break;
       case 'setpark': closeModal(); pickMode = { type: 'park', id }; S.tab = 'map'; store.set('tab', 'map'); render(); toast(T('Коснитесь карты там, где ставите машину')); break;
+      case 'osmpark': S.parks[id] = { lat: +t.dataset.lat, lon: +t.dataset.lon }; store.set('parks', S.parks); toast(T('Парковка сохранена')); openSpot(id); break;
+      case 'osmsnap': { const p = { lat: +t.dataset.lat, lon: +t.dataset.lon }, cs = S.custom.find(x => x.id === id);
+        if (cs) { cs.lat = p.lat; cs.lon = p.lon; store.set('custom', S.custom); } else { S.edits[id] = Object.assign({}, S.edits[id], p); store.set('edits', S.edits); }
+        toast(T('Место уточнено')); openSpot(id); loadWeather(true); break; }
       case 'movespot': closeModal(); pickMode = { type: 'move', id }; S.tab = 'map'; render(); break;
       case 'geoadd': geo(p => spotForm(null, p)); break;
       case 'editspot': spotForm(id); break;
