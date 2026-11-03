@@ -1,5 +1,5 @@
 /* Рыбалка Майорка — офлайн и вечерние уведомления */
-const VERSION = 'ryb-v10';
+const VERSION = 'ryb-v11';
 const SHELL = ['./', 'index.html', 'core.js', 'app.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png',
   'lib/leaflet.css',
   'lib/leaflet.js', 'i18n.js'];
@@ -40,7 +40,7 @@ async function notifyTomorrow() {
   const { spots, notif, lang, home } = await r.json(); if (lang) I18N.lang = lang; const T = I18N.T; if (!notif || !spots || !spots.length) return;
   const now = new Date(), h = now.getHours(), today = FishCore.ymd(now);
   const u = FishCore.weatherUrls(spots);
-  const [fc, mar] = await Promise.all([fetch(u.fc).then(x => x.json()), fetch(u.mar).then(x => x.json()).catch(() => null)]);
+  const [fc, mar] = await Promise.all([fetch(u.fc).then(x => x.json()), fetch(u.mar).then(x => x.ok ? x.json() : Promise.reject()).catch(() => fetch(u.mar2).then(x => x.ok ? x.json() : null)).catch(() => null)]);
   const wx = FishCore.parseWeather(fc, mar || spots.map(() => ({})));
   // Днём: окно клёва рядом с домом в ближайшие 3 часа (оценка от 80, до 30 км)
   if (h >= 6 && h <= 21 && home) {

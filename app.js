@@ -131,7 +131,7 @@
     try {
       const u = C.weatherUrls(spots);
       const [fc, mar] = await Promise.all([fetch(u.fc).then(r => { if (!r.ok) throw new Error(T('погода ') + r.status); return r.json(); }),
-        fetch(u.mar).then(r => r.ok ? r.json() : null).catch(() => null)]);
+        fetch(u.mar).then(r => r.ok ? r.json() : Promise.reject()).catch(() => fetch(u.mar2).then(r => r.ok ? r.json() : null)).catch(() => null)]);
       const data = C.parseWeather(fc, mar || (Array.isArray(fc) ? fc.map(() => ({})) : {}));
       S.wx = { at: Date.now(), ids: spots.map(s => s.id), data };
       store.set('wx', S.wx);

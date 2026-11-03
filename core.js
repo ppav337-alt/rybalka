@@ -480,7 +480,10 @@
         '&hourly=temperature_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,pressure_msl,cloud_cover,precipitation'+
         '&daily=sunrise,sunset&timezone=Europe%2FMadrid&past_days=1&forecast_days=3',
       mar: 'https://marine-api.open-meteo.com/v1/marine?latitude='+lat+'&longitude='+lon+
-        '&hourly=wave_height,wave_period,sea_surface_temperature,sea_level_height_msl,ocean_current_velocity,ocean_current_direction&timezone=Europe%2FMadrid&past_days=1&forecast_days=3'
+        '&hourly=wave_height,wave_period,sea_surface_temperature,sea_level_height_msl,ocean_current_velocity,ocean_current_direction&timezone=Europe%2FMadrid&past_days=1&forecast_days=3',
+      // запасной запрос без уровня моря и течения
+      mar2: 'https://marine-api.open-meteo.com/v1/marine?latitude='+lat+'&longitude='+lon+
+        '&hourly=wave_height,wave_period,sea_surface_temperature&timezone=Europe%2FMadrid&past_days=1&forecast_days=3'
     };
   }
 
