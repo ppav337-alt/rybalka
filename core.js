@@ -103,8 +103,8 @@
     { id:'crab_fontanelles', name:'Ses Fontanelles (Can Pastilla)', area:T('Юг (Пальма)'), lat:39.5345, lon:2.7175, type:'beach', depth:'shallow', face:200, reserve:'none',
       fish:T('Голубой краб'), methods:T('Сачок днём'), parking:T('Улицы Can Pastilla'), q:'Ses Fontanelles Can Pastilla', src:'atlas',
       warn:T('Место по сообщениям о находках краба, не проверено на месте.') },
-    { id:'crab_albufereta', name:T('Albufereta (Pollença) — со стороны моря'), area:T('Север'), lat:39.8565, lon:3.0920, type:'beach', depth:'shallow', face:90, reserve:'none',
-      fish:T('Голубой краб'), methods:T('Сачок днём'), parking:T('У пляжа Albufereta'), q:'Platja de l\'Albufereta Pollença', src:'atlas',
+    { id:'crab_albufereta', name:T('Albufereta (Pollença) — со стороны моря'), area:T('Север'), lat:null, lon:null, type:'beach', depth:'shallow', face:90, reserve:'none',
+      fish:T('Голубой краб'), methods:T('Сачок днём'), parking:T('У пляжа вдоль Ma-2220, не в резервате. Точку уточняем'), q:'Platja de l\'Albufereta Ma-2220', src:'atlas',
       warn:T('Резерват s\'Albufereta: ловля запрещена везде, кроме пляжей и морского берега. В лагуне и каналах нельзя (правила резервата, caib.es).') }
   ];
 
@@ -164,7 +164,7 @@
     banyalbufar:'Banyalbufar aparcament', calobra:'Aparcament Sa Calobra', figueraformentor:'Cala Figuera Formentor aparcament',
     delta:'Cala Delta Llucmajor', songranada:'Mirador de Maioris Llucmajor', clotsase:'Sa Ràpita aparcament',
     almunia:'Aparcament Caló des Moro Cala s\'Almunia', llombards:'Aparcament Cala Llombards',
-    crab_muro:'Aparcament Parc de s\'Albufera', crab_fontanelles:'Ses Fontanelles Can Pastilla', crab_albufereta:'Platja de l\'Albufereta Pollença'
+    crab_muro:'Aparcament Parc de s\'Albufera', crab_fontanelles:'Ses Fontanelles Can Pastilla', crab_albufereta:'Platja de l\'Albufereta Ma-2220'
   };
 
   // ---------- Справочник рыб ----------
