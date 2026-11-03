@@ -72,7 +72,7 @@
 "Dorada, mabre, sargo; biban de mare la gura canalului oct–mar",
 "Dorada, herrera, sargo; lubina en la desembocadura oct–mar"
 ],
-"Сёрфкастинг, донка": [
+"Серфкастинг, донка": [
 "Surfcasting, bottom fishing",
 "Surfcasting, pescuit la fund",
 "Surfcasting, fondo"
@@ -87,7 +87,7 @@
 "Mabre, dorada, sargo, oblada",
 "Herrera, dorada, sargo, oblada"
 ],
-"Ночной сёрфкастинг": [
+"Ночной серфкастинг": [
 "Night surfcasting",
 "Surfcasting nocturn",
 "Surfcasting nocturno"
@@ -147,7 +147,7 @@
 "Dorada, mabre, biban de mare pe furtună",
 "Dorada, herrera, lubina con temporal"
 ],
-"Сёрфкастинг": [
+"Серфкастинг": [
 "Surfcasting",
 "Surfcasting",
 "Surfcasting"
@@ -427,7 +427,7 @@
 "Dorada, sargo",
 "Dorada, sargo"
 ],
-"Донка, сёрфкастинг": [
+"Донка, серфкастинг": [
 "Bottom, surfcasting",
 "Fund, surfcasting",
 "Fondo, surfcasting"
@@ -487,7 +487,7 @@
 "Crab albastru; biban de mare la gură",
 "Cangrejo azul; lubina en la desembocadura"
 ],
-"Сачок днём; сёрф ночью": [
+"Сачок днём; серф ночью": [
 "Landing net by day; surfcasting at night",
 "Minciog ziua; surfcasting noaptea",
 "Salabre de día; surfcasting de noche"
@@ -657,7 +657,7 @@
 "Dimensiuni minime: sargo 23 cm, dorada 20 cm (35 cm în rezervație).",
 "Tallas mínimas: sargo 23 cm, dorada 20 cm (35 cm en la reserva)."
 ],
-"Сёрф": [
+"Серф": [
 "Surf",
 "Surf",
 "Surf"
@@ -807,7 +807,7 @@
 "Dorada",
 "Dorada"
 ],
-"Сёрфкастинг и донка с песка, ночь и рассвет. Наживка: краб из магазина, креветка, черви (покупные). Лучше осень–весна.": [
+"Серфкастинг и донка с песка, ночь и рассвет. Наживка: краб из магазина, креветка, черви (покупные). Лучше осень–весна.": [
 "Surfcasting and bottom fishing from sand, night and dawn. Bait: shop crab, prawn, worms (shop-bought). Best autumn–spring.",
 "Surfcasting și pescuit la fund de pe nisip, noaptea și în zori. Momeală: crab din magazin, crevete, viermi (din magazin). Mai bine toamna–primăvara.",
 "Surfcasting y fondo desde arena, noche y amanecer. Cebo: cangrejo de tienda, gamba, gusanos (de tienda). Mejor otoño–primavera."
@@ -817,7 +817,7 @@
 "Biban de mare (lavrac)",
 "Lubina"
 ],
-"После шторма в мутной воде у пляжей и устьев. Воблеры 9–12 см, сёрфкастинг с сардиной. Окт–мар.": [
+"После шторма в мутной воде у пляжей и устьев. Воблеры 9–12 см, серфкастинг с сардиной. Окт–мар.": [
 "After a storm in murky water by beaches and river mouths. Lures 9–12 cm, surfcasting with sardine. Oct–Mar.",
 "După furtună în apă tulbure la plaje și guri de râu. Voblere 9–12 cm, surfcasting cu sardină. Oct–mar.",
 "Tras temporal en agua turbia junto a playas y desembocaduras. Señuelos 9–12 cm, surfcasting con sardina. Oct–mar."
@@ -932,7 +932,7 @@
 "Mabre (herrera)",
 "Herrera (mabre)"
 ],
-"Песок у берега, ночной сёрфкастинг, черви. Мин. размер — проверить.": [
+"Песок у берега, ночной серфкастинг, черви. Мин. размер — проверить.": [
 "Sand near the shore, night surfcasting, worms. Min. size — check.",
 "Nisip lângă mal, surfcasting nocturn, viermi. Dimensiunea minimă — verificați.",
 "Arena junto a la orilla, surfcasting nocturno, gusanos. Talla mínima — comprobar."
@@ -1287,7 +1287,7 @@
 "Nu e loc de pescuit.",
 "No es lugar de pesca."
 ],
-"Сёрфкастинг 4–4,5 м, груз 80–150 г, поводок 0,25–0,30, крючок №4–6.": [
+"Серфкастинг 4–4,5 м, груз 80–150 г, поводок 0,25–0,30, крючок №4–6.": [
 "Surfcasting 4–4.5 m, 80–150 g sinker, 0.25–0.30 snood, hook #4–6.",
 "Surfcasting 4–4,5 m, plumb 80–150 g, strună 0,25–0,30, cârlig nr. 4–6.",
 "Surfcasting 4–4,5 m, plomo 80–150 g, bajo 0,25–0,30, anzuelo n.º 4–6."
@@ -2142,7 +2142,7 @@
 "<option value=\"other\">Altul</option></select></label>",
 "<option value=\"other\">Otro</option></select></label>"
 ],
-"<div class=\"row\"><label>Способ<select name=\"method\"><option></option><option>Сёрфкастинг</option><option>Донка</option><option>Поплавок</option><option>Спиннинг</option><option>Эги</option><option>Живец</option></select></label>": [
+"<div class=\"row\"><label>Способ<select name=\"method\"><option></option><option>Серфкастинг</option><option>Донка</option><option>Поплавок</option><option>Спиннинг</option><option>Эги</option><option>Живец</option></select></label>": [
 "<div class=\"row\"><label>Method<select name=\"method\"><option></option><option>Surfcasting</option><option>Bottom</option><option>Float</option><option>Spinning</option><option>Egi</option><option>Live bait</option></select></label>",
 "<div class=\"row\"><label>Metodă<select name=\"method\"><option></option><option>Surfcasting</option><option>La fund</option><option>Plută</option><option>Spinning</option><option>Egi</option><option>Momeală vie</option></select></label>",
 "<div class=\"row\"><label>Modalidad<select name=\"method\"><option></option><option>Surfcasting</option><option>Fondo</option><option>Boya</option><option>Spinning</option><option>Egi</option><option>Vivo</option></select></label>"
