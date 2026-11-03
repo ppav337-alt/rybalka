@@ -237,8 +237,8 @@
       '<div class="cmeta">' + esc(s.area || '') + ' · ' + (s.type === 'beach' ? T('пляж') : T('скалы')) + ' · ' + ({ shallow: T('0–5 м'), mid: T('5–15 м'), deep: T('15+ м') }[s.depth] || '') +
       ' · ' + km(S.settings.home, s) + T(' км от дома</div>');
     if (s.warn) h += '<p class="warn">' + esc(s.warn) + '</p>';
-    h += '<div class="btns"><a class="btn pri" target="_blank" rel="noopener" href="' + parkRoute(s) + T('">🚗 Маршрут к парковке</a>') +
-      (s.lat != null ? '<a class="btn" target="_blank" rel="noopener" href="' + mapsLink(s) + T('&travelmode=walking">🚶 К месту ловли</a>') : '') +
+    h += '<div class="btns"><a class="btn pri" target="_blank" rel="noopener" href="' + parkRoute(s) + T('">1. 🚗 Доехать до парковки</a>') +
+      (s.lat != null ? '<a class="btn pri" target="_blank" rel="noopener" href="' + walkRoute(s) + T('">2. 🚶 От парковки к месту</a>') : '') +
       '<button class="btn" data-act="addcatch" data-spot="' + esc(s.id) + T('">Записать улов</button>') +
       (s.lat == null ? '<a class="btn" target="_blank" rel="noopener" href="' + searchLink(s) + T('">Найти на карте</a>') : '') +
       '<button class="btn" data-act="pack" data-spot="' + esc(s.id) + '">🎒 ' + T('Сборы') + '</button><button class="btn" data-act="share">📤 ' + T('Отправить моё место') + '</button></div>';
@@ -374,6 +374,12 @@
     if (p) return 'https://www.google.com/maps/dir/?api=1&destination=' + p.lat + ',' + p.lon + '&travelmode=driving';
     return 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(s.parkQ || ('parking ' + (s.q || s.name))) + '&travelmode=driving';
   }
+  // Пешком от парковки до места ловли: старт — своя метка парковки или поиск по названию
+  function walkRoute(s) {
+    const p = parkOf(s);
+    const origin = p ? p.lat + ',' + p.lon : encodeURIComponent(s.parkQ || ('parking ' + (s.q || s.name)));
+    return 'https://www.google.com/maps/dir/?api=1&origin=' + origin + '&destination=' + s.lat + ',' + s.lon + '&travelmode=walking';
+  }
   function techCard(k, open) {
     const t = C.TECH[k]; if (!t) return '';
     return '<details class="fishcard"' + (open ? ' open' : '') + '><summary><b>' + t.icon + ' ' + esc(t.name) + '</b></summary><div class="fbody">' +
@@ -411,7 +417,10 @@
       const wx = wxFor(s.id), b = wx ? C.bestWindow(s, wx, key, S.day === 0 ? Date.now() : 0, curTech() && spotTech(s).includes(curTech()) ? curTech() : null) : null;
       if (curTech() && !spotTech(s).includes(curTech())) return;
       const pk = parkOf(s);
-      if (pk) L.marker([pk.lat, pk.lon], { icon: L.divIcon({ className: 'pk', html: 'P', iconSize: [20, 20] }) }).addTo(map).bindTooltip(T('Парковка: ') + s.name);
+      if (pk) {
+        L.marker([pk.lat, pk.lon], { icon: L.divIcon({ className: 'pk', html: 'P', iconSize: [20, 20] }) }).addTo(map).bindTooltip(T('Парковка: ') + s.name);
+        L.polyline([[pk.lat, pk.lon], [s.lat, s.lon]], { color: '#2b6cff', weight: 3, dashArray: '6 6', opacity: .8 }).addTo(map);
+      }
       const sc = b && !b.closed ? b.score : 0;
       const col = s.noFish ? '#8a8f98' : { good: '#1fb36b', ok: '#e0a400', bad: '#e0533d', no: '#8a8f98' }[scoreClass(sc)];
       const mk = L.circleMarker([s.lat, s.lon], { radius: 10, color: '#fff', weight: 2, fillColor: col, fillOpacity: 1 }).addTo(map);
@@ -723,7 +732,7 @@
       '<a target="_blank" rel="noopener" href="https://www.caib.es/sites/reservesmarines/es/regulacian_de_actividades_0/">Ponent</a></li>' +
       T('<li>Координаты 10 точек и описания 20 парковок сверены по описаниям пляжей (mallorcard.es); ограничения Formentor — по DGT 2026. Остальное примерно, проверяйте на месте.</li>') +
       T('<li>Погода: Open-Meteo. Карта: OpenStreetMap.</li><li>Сомнения по заповедникам: 971 176 100.</li></ul></div>') +
-      T('<p class="foot">Рыбалка Майорка · версия 2.4 · данные хранятся только в этом телефоне.</p>');
+      T('<p class="foot">Рыбалка Майорка · версия 2.5 · данные хранятся только в этом телефоне.</p>');
   }
 
   async function doExport() {
