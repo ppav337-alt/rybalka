@@ -105,7 +105,7 @@
       warn:T('Место по сообщениям о находках краба, не проверено на месте.') },
     { id:'crab_albufereta', name:T('Albufereta (Pollença) — со стороны моря'), area:T('Север'), lat:39.8565, lon:3.0920, type:'beach', depth:'shallow', face:90, reserve:'none',
       fish:T('Голубой краб'), methods:T('Сачок днём'), parking:T('У пляжа Albufereta'), q:'Platja de l\'Albufereta Pollença', src:'atlas',
-      warn:T('Сама лагуна — природный резерват: ловить только на морском берегу.') }
+      warn:T('Резерват s\'Albufereta: ловля запрещена везде, кроме пляжей и морского берега. В лагуне и каналах нельзя (правила резервата, caib.es).') }
   ];
 
 
