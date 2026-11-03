@@ -14,8 +14,11 @@
       note: T('Вт, пт, сб, вс и праздники. Удочка, спиннинг, 1 потера (эги), до 6 крючков шире 7 мм. Живец запрещён. Из охраняемых видов — 1 рыба в день. В зоне особой охраны нельзя.'),
       url: 'https://www.caib.es/sites/reservesmarines/es/regulacio_dactivitats-854' },
     migjorn: { name: T('Заповедник Migjorn'), days: [0,1,2,3,4,5,6],
-      note: T('С берега можно каждый день, кроме зоны особой охраны (304 га, см. карту). Удочка, до 6 крючков шире 7 мм, 1 потера, сачок. Живец запрещён. Из охраняемых видов — 1 рыба в день.'),
-      url: 'https://www.caib.es/sites/reservesmarines/es/regulacion_de_actividades-862/' },
+      note: T('С берега можно каждый день, кроме зоны особой охраны: берег от Cala Figuereta до Es Bauç (между Cap de ses Salines и s\'Almunia). Удочка, до 6 крючков шире 7 мм, 1 потера, сачок. Живец запрещён. Из охраняемых видов — 1 рыба в день.'),
+      url: 'https://www.caib.es/sites/reservesmarines/es/regulacion_de_actividades-862/',
+      // Зона особой охраны (ZPE): точки a,b,c,d с официальной карты (ETRS89) + 2 точки на суше, чтобы захватить берег
+      zpe: [[39.29217,3.09633],[39.28050,3.11583],[39.28817,3.12633],[39.30217,3.10950],[39.30467,3.10650],[39.29467,3.09333]],
+      zpeName: T('Зона особой охраны Migjorn (Cala Figuereta – Es Bauç)') },
     dragonera: { name: T('Заповедник Freu de sa Dragonera'), days: [0,1,2,3,4,5,6],
       note: T('С берега Мальорки можно каждый день. С острова Dragonera и островков Pantaleu и Sa Mitjana — нельзя. Удочка до 2 линий, до 6 крючков шире 7 мм, 1 потера, спиннинг. Соревнования запрещены.'),
       url: 'https://www.caib.es/sites/reservesmarines/es/regulacian_de_actividades/' },
@@ -83,7 +86,8 @@
     { id:'clotsase', name:'Escar del Clot de s\'Ase', area:T('Юг'), lat:39.3620, lon:2.9550, type:'rock', depth:'shallow', face:200, reserve:'migjorn',
       fish:T('Дорада, сарг'), methods:T('Донка, сурф-кастинг'), parking:T('Пешком из Sa Ràpita'), q:'Escar del Clot de s\'Ase Mallorca', src:'chatgpt' },
     { id:'almunia', name:'Cala s\'Almunia', area:T('Юго-восток'), lat:39.3132, lon:3.1180, type:'rock', depth:'mid', face:150, reserve:'migjorn',
-      fish:T('Сарг, сибас, дорада'), methods:T('Донка, поплавок'), parking:T('Общая стоянка с Caló des Moro, дальше 15–20 мин и крутая лестница'), q:'Cala s\'Almunia Mallorca', src:'chatgpt' },
+      fish:T('Сарг, сибас, дорада'), methods:T('Донка, поплавок'), parking:T('Общая стоянка с Caló des Moro, дальше 15–20 мин и крутая лестница'), q:'Cala s\'Almunia Mallorca', src:'chatgpt',
+      warn:T('Юго-западнее, от Es Bauç до Cala Figuereta, — зона особой охраны: туда не заходить.') },
     { id:'llombards', name:'Cala Llombards', area:T('Юго-восток'), lat:39.3236, lon:3.1382, type:'beach', depth:'shallow', face:140, reserve:'migjorn',
       fish:T('Дорада, сарг'), methods:T('Сурф-кастинг'), parking:T('Бесплатная стоянка у пляжа, летом заполняется к полудню; дальше улицы'), q:'Cala Llombards Mallorca', src:'chatgpt' },
     { id:'pontas', name:T('Es Pontàs (ориентир)'), area:T('Юго-восток'), lat:39.3335, lon:3.1470, type:'rock', depth:'deep', face:130, reserve:'migjorn',
@@ -219,11 +223,23 @@
   }
   const DOW = [T('вс'),T('пн'),T('вт'),T('ср'),T('чт'),T('пт'),T('сб')];
 
+  // Точка внутри многоугольника [[lat,lon],...]
+  function inPoly(lat, lon, poly) {
+    let inside = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const [yi, xi] = poly[i], [yj, xj] = poly[j];
+      if ((yi > lat) !== (yj > lat) && lon < (xj - xi) * (lat - yi) / (yj - yi) + xi) inside = !inside;
+    }
+    return inside;
+  }
+
   // Можно ли ловить в эту дату/час в этой точке
   function legal(spot, date, tech, sun) {
     const r = RESERVES[spot.reserve] || RESERVES.none;
     if (spot.noFish) return { ok:false, why:T('Не рыболовная точка') };
     if (r.days === null) return { ok:true, unsure:true, why:r.name+T(': правила не подтверждены') };
+    for (const z of Object.values(RESERVES)) if (z.zpe && spot.lat != null && inPoly(spot.lat, spot.lon, z.zpe))
+      return { ok:false, why:z.zpeName+T(': ловить нельзя') };
     const dow = date.getDay();
     if (!r.days.includes(dow) && !(r.holidays && isHoliday(date)))
       return { ok:false, why:r.name+T(': сегодня (')+DOW[dow]+T(') ловить нельзя. Можно: ')+r.days.map(x=>DOW[x]).join(', ')+T(' и праздники') };
