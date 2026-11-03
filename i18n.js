@@ -5,6 +5,25 @@
   try { lang = root.localStorage && root.localStorage.getItem('ryb_lang') || 'ru'; } catch (e) {}
   if (!LANGS[lang]) lang = 'ru';
   var D = {
+"Ищу парковки и берег по OpenStreetMap…": ["Looking up parkings and shoreline in OpenStreetMap…", "Caut parcări și țărm în OpenStreetMap…", "Buscando aparcamientos y costa en OpenStreetMap…"],
+"OpenStreetMap сейчас не отвечает. Откройте место ещё раз позже.": ["OpenStreetMap is not responding. Open the spot again later.", "OpenStreetMap nu răspunde. Deschideți locul din nou mai târziu.", "OpenStreetMap no responde. Abre el lugar de nuevo más tarde."],
+"Проверка по OpenStreetMap": ["OpenStreetMap check", "Verificare OpenStreetMap", "Comprobación con OpenStreetMap"],
+"В 1 км от точки нет морского берега. Точка, скорее всего, стоит неверно.": ["No sea shore within 1 km. The point is probably wrong.", "Nu există țărm de mare în 1 km. Punctul este probabil greșit.", "No hay costa a menos de 1 km. El punto probablemente está mal."],
+"Точка в ": ["The point is ", "Punctul este la ", "El punto está a "],
+" м от берега моря. Возможно, она неточная.": [" m from the sea shore. It may be inaccurate.", " m de țărmul mării. Poate fi inexact.", " m de la costa. Puede ser inexacto."],
+"Ближайший берег": ["Nearest shore", "Cel mai apropiat țărm", "Costa más cercana"],
+"Сдвинуть точку на берег": ["Move point to the shore", "Mută punctul pe țărm", "Mover el punto a la costa"],
+"Точка у самого берега (": ["The point is right at the shore (", "Punctul este chiar la țărm (", "El punto está junto a la costa ("],
+" м).": [" m).", " m).", " m)."],
+"Парковки рядом (OpenStreetMap)": ["Parkings nearby (OpenStreetMap)", "Parcări în apropiere (OpenStreetMap)", "Aparcamientos cerca (OpenStreetMap)"],
+"Парковка": ["Parking", "Parcare", "Aparcamiento"],
+" м до места": [" m to the spot", " m până la loc", " m hasta el lugar"],
+" · платная": [" · paid", " · cu plată", " · de pago"],
+" · бесплатная": [" · free", " · gratuită", " · gratis"],
+"Маршрут": ["Route", "Traseu", "Ruta"],
+"Это моя парковка": ["This is my parking", "Aceasta e parcarea mea", "Este es mi aparcamiento"],
+"В OpenStreetMap нет парковок в 1,5 км от точки.": ["No parkings in OpenStreetMap within 1.5 km.", "Nicio parcare în OpenStreetMap în 1,5 km.", "No hay aparcamientos en OpenStreetMap a menos de 1,5 km."],
+"Данные © участники OpenStreetMap. Проверьте на месте.": ["Data © OpenStreetMap contributors. Check on site.", "Date © contribuitorii OpenStreetMap. Verificați la fața locului.", "Datos © colaboradores de OpenStreetMap. Compruébalo en el lugar."],
 "80–100 г":["80–100 g","80–100 g","80–100 g"],"120–150 г":["120–150 g","120–150 g","120–150 g"],
 "150 г и больше, груз с якорями":["150 g or more, grip lead", "150 g sau mai mult, plumb cu ancore", "150 g o más, plomo de garras"],
 "солунар: главный период":["solunar: major period", "solunar: perioadă majoră", "solunar: periodo mayor"],
@@ -2775,7 +2794,7 @@
 "Резерват s'Albufereta: ловля запрещена везде, кроме пляжей и морского берега. В лагуне и каналах нельзя (правила резервата, caib.es).": ["s'Albufereta reserve: fishing is banned everywhere except the beaches and the sea shore. Not in the lagoon or canals (reserve rules, caib.es).", "Rezervația s'Albufereta: pescuitul e interzis peste tot, cu excepția plajelor și a țărmului mării. Nu în lagună sau canale (regulile rezervației, caib.es).", "Reserva de s'Albufereta: pesca prohibida en todo el espacio, salvo en las playas y la ribera del mar. No en la laguna ni en los canales (normas de la reserva, caib.es)."],
 "<p class=\"foot\">Рыбалка Майорка · версия 2.8 · данные хранятся только в этом телефоне.</p>": ["<p class=\"foot\">Mallorca Fishing · version 2.8 · data is stored only on this phone.</p>", "<p class=\"foot\">Pescuit Mallorca · versiunea 2.8 · datele sunt stocate doar pe acest telefon.</p>", "<p class=\"foot\">Pesca Mallorca · versión 2.8 · los datos se guardan solo en este teléfono.</p>"],
 "У пляжа вдоль Ma-2220, не в резервате. Точку уточняем": ["By the beach along the Ma-2220, outside the reserve. Exact point pending", "Lângă plajă de-a lungul Ma-2220, nu în rezervație. Punctul se verifică", "Junto a la playa por la Ma-2220, fuera de la reserva. Punto por confirmar"],
-"<p class=\"foot\">Рыбалка Майорка · версия 2.9 · данные хранятся только в этом телефоне.</p>": ["<p class=\"foot\">Mallorca Fishing · version 2.9 · data is stored only on this phone.</p>", "<p class=\"foot\">Pescuit Mallorca · versiunea 2.9 · datele sunt stocate doar pe acest telefon.</p>", "<p class=\"foot\">Pesca Mallorca · versión 2.9 · los datos se guardan solo en este teléfono.</p>"]
+"<p class=\"foot\">Рыбалка Майорка · версия 2.10 · данные хранятся только в этом телефоне.</p>": ["<p class=\"foot\">Mallorca Fishing · version 2.10 · data is stored only on this phone.</p>", "<p class=\"foot\">Pescuit Mallorca · versiunea 2.10 · datele sunt stocate doar pe acest telefon.</p>", "<p class=\"foot\">Pesca Mallorca · versión 2.10 · los datos se guardan solo en este teléfono.</p>"]
 };
   var I = {
     LANGS: LANGS,
