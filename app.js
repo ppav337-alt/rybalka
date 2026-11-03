@@ -237,8 +237,8 @@
       '<div class="cmeta">' + esc(s.area || '') + ' · ' + (s.type === 'beach' ? T('пляж') : T('скалы')) + ' · ' + ({ shallow: T('0–5 м'), mid: T('5–15 м'), deep: T('15+ м') }[s.depth] || '') +
       ' · ' + km(S.settings.home, s) + T(' км от дома</div>');
     if (s.warn) h += '<p class="warn">' + esc(s.warn) + '</p>';
-    h += '<div class="btns"><a class="btn pri" target="_blank" rel="noopener" href="' + parkRoute(s) + T('">1. 🚗 Доехать до парковки</a>') +
-      (s.lat != null ? '<a class="btn pri" target="_blank" rel="noopener" href="' + walkRoute(s) + T('">2. 🚶 От парковки к месту</a>') : '') +
+    h += '<div class="btns"><a class="btn pri" id="rt-park" target="_blank" rel="noopener" href="' + parkRoute(s) + T('">1. 🚗 Доехать до парковки</a>') +
+      (s.lat != null ? '<a class="btn pri" id="rt-walk" target="_blank" rel="noopener" href="' + walkRoute(s) + T('">2. 🚶 От парковки к месту</a>') : '') +
       '<button class="btn" data-act="addcatch" data-spot="' + esc(s.id) + T('">Записать улов</button>') +
       (s.lat == null ? '<a class="btn" target="_blank" rel="noopener" href="' + searchLink(s) + T('">Найти на карте</a>') : '') +
       '<button class="btn" data-act="pack" data-spot="' + esc(s.id) + '">🎒 ' + T('Сборы') + '</button><button class="btn" data-act="share">📤 ' + T('Отправить моё место') + '</button></div>';
@@ -287,7 +287,7 @@
     osmCheck(s);
   }
   // ---------- OpenStreetMap: парковки рядом и проверка берега (запрос идёт с телефона) ----------
-  const osmCache = {};
+  const osmCache = {}, osmNear = {};
   const OVERPASS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter', 'https://maps.mail.ru/osm/tools/overpass/api/interpreter'];
   async function overpass(q) {
     for (const u of OVERPASS) {
@@ -330,6 +330,9 @@
       .map(e => { const c = e.center || e; return { lat: c.lat, lon: c.lon, name: e.tags.name || '', fee: e.tags.fee, d: meters(s, c) }; })
       .filter(p => p.lat != null).sort((a, b) => a.d - b.d).slice(0, 4);
     const coast = nearestCoast(s, els.filter(e => e.type === 'way' && e.tags && e.tags.natural === 'coastline'));
+    // Без своей метки маршрут «до парковки» ведёт к ближайшей парковке OSM, а не к поиску по названию
+    if (parks.length) { osmNear[k] = { lat: parks[0].lat, lon: parks[0].lon };
+      const a = $('#rt-park'), w = $('#rt-walk'); if (a) a.href = parkRoute(s); if (w) w.href = walkRoute(s); }
     let h = '<h3>' + T('Проверка по OpenStreetMap') + '</h3>';
     if (!coast) h += '<p class="warn">' + T('В 1 км от точки нет морского берега. Точка, скорее всего, стоит неверно.') + '</p>';
     else if (coast.d > 60) h += '<p class="warn">' + T('Точка в ') + Math.round(coast.d) + T(' м от берега моря. Возможно, она неточная.') + '</p>' +
@@ -432,7 +435,8 @@
     return Object.entries(c).sort((a, b) => b[1] - a[1]).slice(0, 3).map(x => x[0] + ':00').join(', ') || '—';
   }
 
-  function parkOf(s) { return S.parks[s.id] || s.parkPt || null; }
+  // Своя метка → точка из данных → ближайшая парковка из OpenStreetMap (если уже найдена)
+  function parkOf(s) { return S.parks[s.id] || s.parkPt || (s.lat != null && osmNear[s.lat + ',' + s.lon]) || null; }
   function parkRoute(s) {
     const p = parkOf(s);
     if (p) return 'https://www.google.com/maps/dir/?api=1&destination=' + p.lat + ',' + p.lon + '&travelmode=driving';
@@ -796,7 +800,7 @@
       '<a target="_blank" rel="noopener" href="https://www.caib.es/sites/reservesmarines/es/regulacian_de_actividades_0/">Ponent</a></li>' +
       T('<li>Координаты 10 точек и описания 20 парковок сверены по описаниям пляжей (mallorcard.es); ограничения Formentor — по DGT 2026. Остальное примерно, проверяйте на месте.</li>') +
       T('<li>Погода: Open-Meteo. Карта: OpenStreetMap.</li><li>Сомнения по заповедникам: 971 176 100.</li></ul></div>') +
-      T('<p class="foot">Рыбалка Майорка · версия 2.10 · данные хранятся только в этом телефоне.</p>');
+      T('<p class="foot">Рыбалка Майорка · версия 2.11 · данные хранятся только в этом телефоне.</p>');
   }
 
   async function doExport() {
