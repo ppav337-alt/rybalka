@@ -5,6 +5,7 @@
   try { lang = root.localStorage && root.localStorage.getItem('ryb_lang') || 'ru'; } catch (e) {}
   if (!LANGS[lang]) lang = 'ru';
   var D = {
+"Лучшее место":["Best spot","Cel mai bun loc","Mejor lugar"],
 "штиль":["calm", "calm", "calma"],
 "слабая":["light", "slab", "débil"],
 "умеренная":["moderate", "moderat", "moderada"],

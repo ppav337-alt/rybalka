@@ -86,6 +86,19 @@
   const waveWord = w => w < 0.3 ? T('штиль') : w < 0.8 ? T('слабая') : w < 1.5 ? T('умеренная') : T('сильная');
   const waterWord = t => t >= 22 ? T('тёплая') : t >= 18 ? T('комфортная') : T('прохладная');
   const GOOD_TAGS = ['давление плавно падает', 'рассвет', 'закат', 'лёгкий ветер с моря', 'мутная вода: шанс на сибаса', 'время кальмара', 'тёплая вода — краб активен'].map(x => T(x));
+  const TI = {
+    leaf: '<path d="M5 19c0-8 5-13 14-14-1 9-6 14-14 14zM5 19l7-7"/>',
+    down: '<path d="M4 7l6 6 3-3 7 7M20 11v6h-6"/>', up: '<path d="M4 17l6-6 3 3 7-7M20 13V7h-6"/>',
+    sun: '<path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 4v3M4.9 9.9l2 2M19.1 9.9l-2 2"/>',
+    drop: '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>', moon: '<path d="M20 14.5A8 8 0 1 1 9.5 4 6.5 6.5 0 0 0 20 14.5z"/>',
+    warn: '<path d="M12 4l9 16H3zM12 10v4M12 17v.5"/>', info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/>'
+  };
+  const tagIcon = x => {
+    const k = x === T('лёгкий ветер с моря') ? 'leaf' : x === T('давление плавно падает') || x === T('давление резко падает') ? 'down' : x === T('давление резко растёт') ? 'up' :
+      x === T('рассвет') || x === T('закат') ? 'sun' : x.indexOf(T('мутная вода')) === 0 || x === T('ливень') ? 'drop' : x === T('время кальмара') ? 'moon' :
+      x === T('правила не подтверждены') ? 'info' : GOOD_TAGS.includes(x) ? 'leaf' : 'warn';
+    return '<svg viewBox="0 0 24 24">' + TI[k] + '</svg>';
+  };
   const tagTone = x => GOOD_TAGS.includes(x) ? 'tg' : x === T('правила не подтверждены') ? 'tn' : 'tb';
   function ring(score, label) {
     const cls = score == null ? 'no' : scoreClass(score), p = score == null ? 0 : score / 100, L = 2 * Math.PI * 23;
@@ -168,6 +181,7 @@
     const ls = licState(); if (ls && ls.d <= 30) h += '<p class="warn">' + esc(ls.text) + T(' <button class="link" data-act="licshow">Открыть</button></p>');
     if (!S.wx && !S.loading) h += T('<p class="note">Погоды пока нет. Нажмите «обновить», нужен интернет.</p>');
     h += '<div class="list">';
+    let heroDone = false;
     r.forEach(({ s, b, wx }) => {
       const dist = km(S.settings.home, s);
       if (!b) { h += card(s, ring(null, '—'), T('<div class="muted">нет прогноза</div>'), dist); return; }
@@ -177,15 +191,16 @@
         metric(ICON.wind, Math.round(wx.wind[k]) + '<small>' + T(' км/ч') + '</small>', compass(wx.dir[k]), dirArrow(wx.dir[k])) +
         (wv != null ? metric(ICON.wave, wv.toFixed(1) + '<small>' + T(' м') + '</small>', waveWord(wv)) : '') +
         (sst != null ? metric(ICON.temp, Math.round(sst) + '°', waterWord(sst)) : '') + '</div>' +
-        (b.tags.length ? '<div class="tags">' + b.tags.slice(0, 3).map(x => '<span class="' + tagTone(x) + '">' + esc(x) + '</span>').join('') + '</div>' : '') +
+        (b.tags.length ? '<div class="tags">' + b.tags.slice(0, 3).map(x => '<span class="' + tagTone(x) + '">' + tagIcon(x) + esc(x) + '</span>').join('') + '</div>' : '') +
         (b.danger ? T('<div class="danger">⚠ Опасно на скалах: волна или порывы</div>') : '');
-      h += card(s, ring(b.score), info, dist, hhmm(t) + '–' + addH(t, 2));
+      const hero = !heroDone && b.score >= 50; heroDone = true;
+      h += card(s, ring(b.score), info, dist, hhmm(t) + '–' + addH(t, 2), hero);
     });
     h += T('</div><p class="foot">Оценка 0–100 по ветру, волне, давлению, времени суток, луне и мутности. Это подсказка, а не гарантия клёва.</p>');
     return h;
   }
-  function card(s, badge, info, dist, win) {
-    return '<button class="card" data-spot="' + esc(s.id) + '">' + badge + '<div class="cbody"><div class="chead"><div class="cname">' + esc(s.name) +
+  function card(s, badge, info, dist, win, hero) {
+    return '<button class="card' + (hero ? ' hero' : '') + '" data-spot="' + esc(s.id) + '">' + (hero ? '<div class="herolbl">★ ' + T('Лучшее место') + '</div>' : '') + badge + '<div class="cbody"><div class="chead"><div class="cname">' + esc(s.name) +
       (s.src === 'mine' ? T(' <small>моя</small>') : '') + '</div>' + (win ? '<span class="wintime">' + win + '</span>' : '') + '</div><div class="cmeta">' + esc(s.area || '') + ' · ' + (s.type === 'beach' ? T('пляж') : T('скалы')) + ' · ' +
       ({ shallow: T('0–5 м'), mid: T('5–15 м'), deep: T('15+ м') }[s.depth] || '') + ' · ' + dist + T(' км') +
       (spotTech(s).length ? ' · ' + spotTech(s).map(k => C.TECH[k] ? C.TECH[k].icon : '').join('') : '') + '</div></div><div class="cinfo">' + info + '</div></button>';

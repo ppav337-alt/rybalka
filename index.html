@@ -121,6 +121,23 @@ body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 .panel,.fishcard,.entry{border-radius:16px;box-shadow:var(--shadow)}
 .btn{border-radius:12px}
 </style>
+<style id="v3">
+/* Дизайн v3 */
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#000;--card:#0b1217;--line:#1a252d;--top:#000;--top2:#06141d;--muted:#8697a3}}
+.metrics{grid-template-columns:repeat(3,minmax(0,1fr));gap:0;padding:9px 0}
+.m{padding:0 8px;border-left:1px solid var(--line)}.m:first-child{border-left:0;padding-left:0}
+.m i{background:none!important;width:22px;height:22px}.m svg{width:22px;height:22px;stroke-width:1.6}
+.m b{font-size:16px}.m span{white-space:normal;line-height:1.2;overflow:visible}
+.ring{width:60px;height:60px}.ring circle{stroke-width:5.5}.ring b{font-size:21px;letter-spacing:-.5px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ring.good svg{filter:drop-shadow(0 0 5px rgba(34,197,94,.55))}
+:root:not([data-theme="light"]) .ring.ok svg{filter:drop-shadow(0 0 5px rgba(234,179,8,.5))}:root:not([data-theme="light"]) .ring.bad svg{filter:drop-shadow(0 0 5px rgba(249,115,22,.5))}}
+.tags span{display:inline-flex;align-items:center;gap:4px;padding:3px 9px 3px 7px;border-radius:9px}
+.tags span svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.card.hero{border:1.5px solid color-mix(in srgb,var(--good) 55%,transparent);background:linear-gradient(160deg,color-mix(in srgb,var(--good) 10%,var(--card)),var(--card) 55%);padding-top:12px}
+.card.hero .ring{width:72px;height:72px}.card.hero .ring b{font-size:26px}.card.hero .cname{font-size:18px}
+.herolbl{flex-basis:100%;font-size:11.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--good);margin-bottom:8px}
+.wintime{display:inline-flex;align-items:center;gap:4px}
+</style>
 </head>
 <body>
 <main id="app"></main>
