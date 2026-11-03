@@ -97,8 +97,8 @@
       fish:'—', methods:T('Не место для рыбалки'), parking:T('Смотровая площадка'), q:'Mirador des Balconet Mallorca', src:'chatgpt', noFish:true,
       warn:T('Смотровая на обрыве. Координаты не известны — откройте поиск на карте.') },
     // голубой краб — вероятные места (солоноватая вода у моря)
-    { id:'crab_muro', name:T('Устье канала s\'Albufera (Platja de Muro)'), area:T('Север'), lat:39.7990, lon:3.1170, type:'beach', depth:'shallow', face:45, reserve:'none',
-      fish:T('Голубой краб; сибас у устья'), methods:T('Сачок днём; сурф ночью'), parking:T('Парковка у Pont dels Anglesos'), q:'Pont dels Anglesos Platja de Muro', src:'atlas',
+    { id:'crab_muro', name:T('Устье канала s\'Albufera (Platja de Muro)'), area:T('Север'), lat:39.8016, lon:3.1200, type:'beach', depth:'shallow', face:45, reserve:'none',
+      fish:T('Голубой краб; сибас у устья'), methods:T('Сачок днём; сурф ночью'), parking:T('Стоянка на круге у Pont dels Anglesos (Ma-12), со стороны парка. В парк на машине не заезжать'), q:'Pont dels Anglesos Platja de Muro', src:'atlas',
       warn:T('Только со стороны моря: внутри s\'Oberta и парка s\'Albufera ловить нельзя.'), crabOnly:false },
     { id:'crab_fontanelles', name:'Ses Fontanelles (Can Pastilla)', area:T('Юг (Пальма)'), lat:39.5345, lon:2.7175, type:'beach', depth:'shallow', face:200, reserve:'none',
       fish:T('Голубой краб'), methods:T('Сачок днём'), parking:T('Улицы Can Pastilla'), q:'Ses Fontanelles Can Pastilla', src:'atlas',
@@ -152,6 +152,8 @@
     almunia:['rock'], llombards:['surf'], pontas:[], balconet:[],
     crab_muro:['crab','surf'], crab_fontanelles:['crab'], crab_albufereta:['crab']
   };
+  // Точки парковок, где поиск по названию ведёт не туда (приоритет над PARK_Q)
+  const PARK_PT = { crab_muro: { lat:39.8008, lon:3.1189 } };
   const PARK_Q = {
     sonserra:'Aparcament Son Serra de Marina platja', picafort:'Aparcament Son Bauló Can Picafort', alcanada:'Aparcament Platja d\'Alcanada',
     betlem:'Betlem Artà aparcament', estrenc:'Aparcament Ses Covetes Es Trenc', malpas:'Aparcament Mal Pas Bonaire Alcúdia',
@@ -507,7 +509,7 @@
     };
   }
 
-  SPOTS.forEach(sp => { sp.tech = SPOT_TECH[sp.id] || []; sp.parkQ = PARK_Q[sp.id] || ''; });
+  SPOTS.forEach(sp => { sp.tech = SPOT_TECH[sp.id] || []; sp.parkQ = PARK_Q[sp.id] || ''; sp.parkPt = PARK_PT[sp.id] || null; });
 
   root.FishCore = { RESERVES, SPOTS, FISH, TALLAS_URL, RULES_URL, legal, fishOpen, checkCatch, moonPhase, moonName,
     hourScore, bestWindow, tackle, TECH, solunar, inSol, sinker, BEST, parseWeather, weatherUrls, isHoliday, ymd, DOW, angDiff };

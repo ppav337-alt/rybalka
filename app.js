@@ -246,8 +246,8 @@
     h += T('<h3>Режим</h3><p><b>') + esc(res.name) + '.</b> ' + esc(res.note) + (res.url ? ' <a target="_blank" rel="noopener" href="' + res.url + T('">Правила</a>') : '') + '</p>';
     const L = C.legal(s, new Date(key + 'T12:00'));
     if (!L.ok) h += '<p class="warn">' + esc(L.why) + '</p>';
-    h += T('<h3>Парковка</h3><p>') + esc(s.parking || '—') + (parkOf(s) ? T(' <b>· отмечена вами на карте</b>') : T(' <span class="muted">(поиск по названию)</span>')) +
-      '</p><div class="btns"><button class="btn" data-act="setpark" data-spot="' + esc(s.id) + '">📍 ' + (parkOf(s) ? T('Изменить') : T('Отметить')) + T(' мою парковку</button></div>');
+    h += T('<h3>Парковка</h3><p>') + esc(s.parking || '—') + (S.parks[s.id] ? T(' <b>· отмечена вами на карте</b>') : s.parkPt ? T(' <b>· точка на карте</b>') : T(' <span class="muted">(поиск по названию)</span>')) +
+      '</p><div class="btns"><button class="btn" data-act="setpark" data-spot="' + esc(s.id) + '">📍 ' + (S.parks[s.id] ? T('Изменить') : T('Отметить')) + T(' мою парковку</button></div>');
     h += T('<h3>Рыба</h3><p>') + esc(s.fish) + '</p>';
     const techs = spotTech(s);
     if (techs.length) {
@@ -368,7 +368,7 @@
     return Object.entries(c).sort((a, b) => b[1] - a[1]).slice(0, 3).map(x => x[0] + ':00').join(', ') || '—';
   }
 
-  function parkOf(s) { return S.parks[s.id] || null; }
+  function parkOf(s) { return S.parks[s.id] || s.parkPt || null; }
   function parkRoute(s) {
     const p = parkOf(s);
     if (p) return 'https://www.google.com/maps/dir/?api=1&destination=' + p.lat + ',' + p.lon + '&travelmode=driving';
@@ -732,7 +732,7 @@
       '<a target="_blank" rel="noopener" href="https://www.caib.es/sites/reservesmarines/es/regulacian_de_actividades_0/">Ponent</a></li>' +
       T('<li>Координаты 10 точек и описания 20 парковок сверены по описаниям пляжей (mallorcard.es); ограничения Formentor — по DGT 2026. Остальное примерно, проверяйте на месте.</li>') +
       T('<li>Погода: Open-Meteo. Карта: OpenStreetMap.</li><li>Сомнения по заповедникам: 971 176 100.</li></ul></div>') +
-      T('<p class="foot">Рыбалка Майорка · версия 2.5 · данные хранятся только в этом телефоне.</p>');
+      T('<p class="foot">Рыбалка Майорка · версия 2.6 · данные хранятся только в этом телефоне.</p>');
   }
 
   async function doExport() {
