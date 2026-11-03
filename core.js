@@ -8,22 +8,26 @@
   const RESERVES = {
     none: { name: T('Вне заповедника'), days: [0,1,2,3,4,5,6], note: T('Общие правила Балеар.') },
     llevant: { name: T('Заповедник Llevant / Cala Rajada'), days: [2,4,6,0], holidays: true,
-      note: T('1 снасть на человека, до 6 крючков (у Cala Rajada до 4). Запретная зона Cap Ferrutx – Penya del Llamp.'),
+      note: T('Вт, чт, сб, вс и праздники. 1 удочка на человека, до 6 крючков шире 7 мм (в государственной зоне у Cala Rajada до 4). Запретная зона Cap Ferrutx – Penya del Llamp.'),
       url: 'https://www.caib.es/sites/reservesmarines/es/regulacian_de_actividades_0_0/' },
     palma: { name: T('Заповедник Badia de Palma'), days: [2,5,6,0], holidays: true,
-      note: T('Удочка, спиннинг, 1 эги. По 1 рыбе в день из охраняемых видов. Зона особой охраны у Cap Enderrocat.'),
+      note: T('Вт, пт, сб, вс и праздники. Удочка, спиннинг, 1 потера (эги), до 6 крючков шире 7 мм. Живец запрещён. Из охраняемых видов — 1 рыба в день. В зоне особой охраны нельзя.'),
       url: 'https://www.caib.es/sites/reservesmarines/es/regulacio_dactivitats-854' },
-    migjorn: { name: T('Заповедник Migjorn'), days: null,
-      note: T('Дни и снасти для ловли с берега не подтверждены. Уточнить: 971 176 100.'),
-      url: 'https://caib.es/sites/reservesmarines/es/normativa_basica_sobre_la_reserva-860/' },
-    ponent: { name: T('Заповедник Illes del Ponent (2025)'), days: null,
-      note: T('Новый заповедник, правила не проверены. Уточнить: 971 176 100.'),
-      url: 'https://www.caib.es/sites/reservesmarines/es/' }
+    migjorn: { name: T('Заповедник Migjorn'), days: [0,1,2,3,4,5,6],
+      note: T('С берега можно каждый день, кроме зоны особой охраны (304 га, см. карту). Удочка, до 6 крючков шире 7 мм, 1 потера, сачок. Живец запрещён. Из охраняемых видов — 1 рыба в день.'),
+      url: 'https://www.caib.es/sites/reservesmarines/es/regulacion_de_actividades-862/' },
+    dragonera: { name: T('Заповедник Freu de sa Dragonera'), days: [0,1,2,3,4,5,6],
+      note: T('С берега Мальорки можно каждый день. С острова Dragonera и островков Pantaleu и Sa Mitjana — нельзя. Удочка до 2 линий, до 6 крючков шире 7 мм, 1 потера, спиннинг. Соревнования запрещены.'),
+      url: 'https://www.caib.es/sites/reservesmarines/es/regulacian_de_actividades/' },
+    ponent: { name: T('Заповедник Ponent (Toro, Malgrats, Sec)'), days: [0,1,2,3,4,5,6],
+      note: T('Calvià. Удочка до 2 линий, до 6 крючков шире 7 мм, 1 потера, спиннинг. Нельзя: зоны особой охраны Toro и Sec, полоса Cala de s\'Art – Morro d\'en Feliu, с островков Malgrats.'),
+      url: 'https://www.caib.es/sites/reservesmarines/es/regulacian_de_actividades_0/' }
   };
 
   // ---------- Точки ----------
   // type: beach | rock ; depth: shallow (0–5) | mid (5–15) | deep (15+)
-  // face: куда «смотрит» берег (азимут моря, градусы). Координаты примерные.
+  // face: куда «смотрит» берег (азимут моря, градусы). Координаты примерные;
+  // almunia, llombards, canonge, valldemossa, banyalbufar, calobra, figueraformentor, calablava, estrenc, songranada сверены 03.11.2026.
   const SPOTS = [
     { id:'sonserra', name:'Son Serra de Marina', area:T('Север'), lat:39.7339, lon:3.2300, type:'beach', depth:'shallow', face:20, reserve:'none',
       fish:T('Дорада, мабре, сарг; сибас у устья окт–мар'), methods:T('Сурф-кастинг, донка'), parking:T('Улицы посёлка у пляжа'), q:'Platja de Son Serra de Marina', src:'atlas' },
@@ -33,8 +37,8 @@
       fish:T('Облада, сарг, кальмар окт–янв'), methods:T('Поплавок, эги на закате'), parking:T('У Platja d\'Alcanada'), q:'Platja d\'Alcanada Alcudia', src:'atlas' },
     { id:'betlem', name:'Colònia de Sant Pere – Betlem', area:T('Северо-восток'), lat:39.7270, lon:3.3020, type:'rock', depth:'shallow', face:300, reserve:'none',
       fish:T('Лампуга авг–дек, кальмар, сарг'), methods:T('Лёгкий спиннинг, эги, поплавок'), parking:T('Конец дороги в Betlem'), q:'Betlem Arta Mallorca', src:'atlas',
-      warn:T('Восточнее Cap Ferrutx — запретная зона заповедника.') },
-    { id:'estrenc', name:'Es Trenc – Colònia de Sant Jordi', area:T('Юг'), lat:39.3470, lon:2.9740, type:'beach', depth:'shallow', face:220, reserve:'migjorn',
+      warn:T('Северо-восточнее Cala Mata — заповедник Llevant (вт, чт, сб, вс). От Cap Ferrutx до Penya del Llamp ловить нельзя.') },
+    { id:'estrenc', name:'Es Trenc – Colònia de Sant Jordi', area:T('Юг'), lat:39.3433, lon:2.9839, type:'beach', depth:'shallow', face:220, reserve:'migjorn',
       fish:T('Дорада, мабре, сибас в шторм'), methods:T('Сурф-кастинг'), parking:T('Платные парковки Ses Covetes / Sa Ràpita'), q:'Es Trenc parking Ses Covetes', src:'atlas' },
     { id:'malpas', name:'Mal Pas – Bonaire (Alcúdia)', area:T('Север'), lat:39.8680, lon:3.1650, type:'rock', depth:'mid', face:0, reserve:'none',
       fish:T('Сарг, луфарь сен–ноя, кальмар'), methods:T('Спиннинг, эги, поплавок'), parking:T('Вдоль дороги Mal Pas'), q:'Mal Pas Bonaire Alcudia', src:'atlas' },
@@ -44,7 +48,7 @@
       fish:T('Кальмар ноя–фев, сарг, дорада'), methods:T('Эги, поплавок, донка'), parking:T('У маяка'), q:'Far de Portocolom', src:'atlas', warn:T('Не с причалов порта.') },
     { id:'santvicenc', name:'Cala Sant Vicenç', area:T('Север'), lat:39.9230, lon:3.0560, type:'rock', depth:'mid', face:40, reserve:'none',
       fish:T('Сарг, кальмар, зубан'), methods:T('Спиннинг, эги'), parking:T('В посёлке'), q:'Cala Sant Vicenc Pollenca', src:'atlas' },
-    { id:'calablava', name:'S\'Arenal – Cala Blava', area:T('Юг (Пальма)'), lat:39.4800, lon:2.7450, type:'rock', depth:'mid', face:260, reserve:'palma',
+    { id:'calablava', name:'S\'Arenal – Cala Blava', area:T('Юг (Пальма)'), lat:39.4870, lon:2.7370, type:'rock', depth:'mid', face:260, reserve:'palma',
       fish:T('Сарг, дорада (от 35 см), кальмар'), methods:T('Поплавок, эги, спиннинг'), parking:T('Улицы Cala Blava'), q:'Cala Blava Llucmajor', src:'atlas' },
     { id:'capdepera', name:'Far de Capdepera (Cala Rajada)', area:T('Восток'), lat:39.7150, lon:3.4780, type:'rock', depth:'deep', face:80, reserve:'llevant',
       fish:T('Лича, зубан, луфарь, кальмар; сен–дек'), methods:T('Спиннинг, тяжёлая донка'), parking:T('У маяка'), q:'Far de Capdepera', src:'atlas' },
@@ -57,30 +61,30 @@
       fish:T('Raor сен–мар, сарг, дорада'), methods:T('Ловля raor, донка'), parking:T('У маяка'), q:'Far des Cap de ses Salines', src:'atlas' },
     { id:'figuera', name:'Cala Figuera (Santanyí)', area:T('Юго-восток'), lat:39.3290, lon:3.1710, type:'rock', depth:'deep', face:130, reserve:'migjorn',
       fish:T('Сарг, кальмар, луфарь'), methods:T('Спиннинг, эги'), parking:T('В посёлке'), q:'Cala Figuera Santanyi', src:'atlas' },
-    { id:'santelm', name:'Sant Elm', area:T('Запад'), lat:39.5790, lon:2.3510, type:'rock', depth:'deep', face:260, reserve:'ponent',
-      fish:T('Сарг, кальмар, зубан'), methods:T('Спиннинг, эги'), parking:T('В посёлке'), q:'Sant Elm Andratx', src:'atlas', warn:T('Остров Dragonera с берега не облавливать.') },
+    { id:'santelm', name:'Sant Elm', area:T('Запад'), lat:39.5790, lon:2.3510, type:'rock', depth:'deep', face:260, reserve:'dragonera',
+      fish:T('Сарг, кальмар, зубан'), methods:T('Спиннинг, эги'), parking:T('В посёлке'), q:'Sant Elm Andratx', src:'atlas', warn:T('С острова Dragonera и островков Pantaleu, Sa Mitjana ловить нельзя.') },
     // из архива ChatGPT
-    { id:'canonge', name:'Port des Canonge', area:T('Запад'), lat:39.6960, lon:2.5450, type:'rock', depth:'mid', face:320, reserve:'none',
+    { id:'canonge', name:'Port des Canonge', area:T('Запад'), lat:39.6999, lon:2.5550, type:'rock', depth:'mid', face:320, reserve:'none',
       fish:T('Сарг, сибас'), methods:T('Донка, поплавок, спиннинг'), parking:T('До посёлка на машине, дальше пешком'), q:'Port des Canonge Mallorca', src:'chatgpt' },
-    { id:'valldemossa', name:'Port de Valldemossa', area:T('Запад'), lat:39.7275, lon:2.6086, type:'rock', depth:'mid', face:320, reserve:'none',
+    { id:'valldemossa', name:'Port de Valldemossa', area:T('Запад'), lat:39.7182, lon:2.5883, type:'rock', depth:'mid', face:320, reserve:'none',
       fish:T('Сарг, сибас'), methods:T('Донка, поплавок, спиннинг'), parking:T('Крутая дорога, мало мест'), q:'Port de Valldemossa Mallorca', src:'chatgpt' },
-    { id:'banyalbufar', name:'Cala Banyalbufar', area:T('Запад'), lat:39.6880, lon:2.5120, type:'rock', depth:'mid', face:310, reserve:'none',
+    { id:'banyalbufar', name:'Cala Banyalbufar', area:T('Запад'), lat:39.6905, lon:2.5160, type:'rock', depth:'mid', face:310, reserve:'none',
       fish:T('Сибас, сарг'), methods:T('Спиннинг, донка'), parking:T('Мало мест, неровный спуск'), q:'Cala Banyalbufar Mallorca', src:'chatgpt', warn:T('Только днём, в тихую погоду.') },
-    { id:'calobra', name:'Sa Calobra', area:T('Северо-запад'), lat:39.8530, lon:2.8030, type:'rock', depth:'mid', face:340, reserve:'none',
+    { id:'calobra', name:'Sa Calobra', area:T('Северо-запад'), lat:39.8510, lon:2.7999, type:'rock', depth:'mid', face:340, reserve:'none',
       fish:T('Сарг, сибас'), methods:T('Донка, спиннинг'), parking:T('Платная парковка наверху'), q:'Sa Calobra Mallorca', src:'chatgpt', warn:T('Летом толпы туристов.') },
-    { id:'figueraformentor', name:'Cala Figuera (Formentor)', area:T('Север'), lat:39.9470, lon:3.1720, type:'rock', depth:'mid', face:0, reserve:'none',
+    { id:'figueraformentor', name:'Cala Figuera (Formentor)', area:T('Север'), lat:39.9521, lon:3.1729, type:'rock', depth:'mid', face:0, reserve:'none',
       fish:T('Сарг, сибас'), methods:T('Донка, поплавок'), parking:T('С дороги Formentor пешком'), q:'Cala Figuera Formentor Mallorca', src:'chatgpt',
       warn:T('Летом дорога закрыта для частных авто.') },
     { id:'delta', name:'Cala Delta', area:T('Юг (Пальма)'), lat:39.4575, lon:2.7565, type:'rock', depth:'mid', face:240, reserve:'palma',
       fish:T('Сарг, сибас, дорада'), methods:T('Донка, поплавок, спиннинг'), parking:T('Пешком по скалам'), q:'Cala Delta Llucmajor Mallorca', src:'chatgpt',
       warn:T('Рядом зона особой охраны — проверить границу.') },
-    { id:'songranada', name:'Ses Olles de Son Granada', area:T('Юг'), lat:39.3550, lon:2.9050, type:'rock', depth:'mid', face:190, reserve:'migjorn',
-      fish:T('Сарг, сибас'), methods:T('Лёгкий спиннинг, донка'), parking:T('Пешком по скалам'), q:'Ses Olles Son Granada de Baix Mallorca', src:'chatgpt' },
+    { id:'songranada', name:'Ses Olles de Son Granada (Maioris)', area:T('Юг (Пальма)'), lat:39.4498, lon:2.7430, type:'rock', depth:'mid', face:230, reserve:'palma',
+      fish:T('Сарг, сибас'), methods:T('Лёгкий спиннинг, донка'), parking:T('Mirador de Maioris, дальше ~25 мин пешком по тропе'), q:'Ses Olles de Son Granada de Baix Llucmajor', src:'chatgpt' },
     { id:'clotsase', name:'Escar del Clot de s\'Ase', area:T('Юг'), lat:39.3620, lon:2.9550, type:'rock', depth:'shallow', face:200, reserve:'migjorn',
       fish:T('Дорада, сарг'), methods:T('Донка, сурф-кастинг'), parking:T('Пешком из Sa Ràpita'), q:'Escar del Clot de s\'Ase Mallorca', src:'chatgpt' },
-    { id:'almunia', name:'Cala s\'Almunia', area:T('Юго-восток'), lat:39.2990, lon:3.1220, type:'rock', depth:'mid', face:150, reserve:'migjorn',
+    { id:'almunia', name:'Cala s\'Almunia', area:T('Юго-восток'), lat:39.3132, lon:3.1180, type:'rock', depth:'mid', face:150, reserve:'migjorn',
       fish:T('Сарг, сибас, дорада'), methods:T('Донка, поплавок'), parking:T('Крутой спуск'), q:'Cala s\'Almunia Mallorca', src:'chatgpt' },
-    { id:'llombards', name:'Cala Llombards', area:T('Юго-восток'), lat:39.3270, lon:3.1440, type:'beach', depth:'shallow', face:140, reserve:'migjorn',
+    { id:'llombards', name:'Cala Llombards', area:T('Юго-восток'), lat:39.3236, lon:3.1382, type:'beach', depth:'shallow', face:140, reserve:'migjorn',
       fish:T('Дорада, сарг'), methods:T('Сурф-кастинг'), parking:T('Сезонная, мало мест'), q:'Cala Llombards Mallorca', src:'chatgpt' },
     { id:'pontas', name:T('Es Pontàs (ориентир)'), area:T('Юго-восток'), lat:39.3335, lon:3.1470, type:'rock', depth:'deep', face:130, reserve:'migjorn',
       fish:'—', methods:T('Не место для рыбалки'), parking:T('Смотровая площадка'), q:'Es Pontas Mallorca', src:'chatgpt', noFish:true,
@@ -152,7 +156,7 @@
     formentor:'Aparcament Far de Formentor', salines:'Aparcament Far de ses Salines', figuera:'Aparcament Cala Figuera Santanyí',
     santelm:'Aparcament Sant Elm', canonge:'Port des Canonge aparcament', valldemossa:'Port de Valldemossa aparcament',
     banyalbufar:'Banyalbufar aparcament', calobra:'Aparcament Sa Calobra', figueraformentor:'Cala Figuera Formentor aparcament',
-    delta:'Cala Delta Llucmajor', songranada:'Son Granada de Baix Llucmajor', clotsase:'Sa Ràpita aparcament',
+    delta:'Cala Delta Llucmajor', songranada:'Mirador de Maioris Llucmajor', clotsase:'Sa Ràpita aparcament',
     almunia:'Aparcament Caló des Moro Cala s\'Almunia', llombards:'Aparcament Cala Llombards',
     crab_muro:'Aparcament Pont dels Anglesos Platja de Muro', crab_fontanelles:'Ses Fontanelles Can Pastilla', crab_albufereta:'Platja de l\'Albufereta Pollença'
   };
@@ -266,7 +270,7 @@
       if (todayCount >= f.limit) { keep=false; lines.push(T('Дневной лимит ')+f.limit+T(' шт уже набран (')+todayCount+').'); }
       else lines.push(T('Лимит ')+f.limit+T(' шт в день, сегодня уже ')+todayCount+'.');
     }
-    if (inRes && spot.reserve==='palma') lines.push(T('Badia de Palma: из охраняемых видов — 1 рыба в день.'));
+    if (inRes && (spot.reserve==='palma' || spot.reserve==='migjorn')) lines.push(T('В этом заповеднике из охраняемых видов — 1 рыба в день.'));
     if (f.limitKg) lines.push(T('Лимит ')+f.limitKg+T(' кг в день (не суммируется с рыбой).'));
     if (f.dayOnly && (date.getHours()<7 || date.getHours()>=19)) lines.push(T('Сбор только днём — проверьте время заката.'));
     if (f.check) { unsure=true; lines.push(T('Минимальный размер этого вида не внесён — проверьте таблицу талий.')); }

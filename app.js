@@ -715,8 +715,15 @@
       T('<li>До 2 удочек, до 6 крючков, 5 кг + 1 рыба в день, продажа запрещена.</li>') +
       T('<li>Пляжи 1 мая – 30 сен: нельзя с 7:00 до 22:00. Не ближе 100 м к купающимся и 250 м к сетям. Не в портах.</li>') +
       '<li><a target="_blank" rel="noopener" href="' + C.RULES_URL + T('">Cuaderno de pesca recreativa 2026</a> · <a target="_blank" rel="noopener" href="https://www.caib.es/sites/reservesmarines/es/mapa/">Карта заповедников</a></li>') +
+      T('<li>Правила заповедников сверены 03.11.2026 по сайту Govern de les Illes Balears: ') +
+      '<a target="_blank" rel="noopener" href="https://www.caib.es/sites/reservesmarines/es/regulacion_de_actividades-862/">Migjorn</a> · ' +
+      '<a target="_blank" rel="noopener" href="https://www.caib.es/sites/reservesmarines/es/regulacio_dactivitats-854">Badia de Palma</a> · ' +
+      '<a target="_blank" rel="noopener" href="https://www.caib.es/sites/reservesmarines/es/regulacian_de_actividades_0_0/">Llevant</a> · ' +
+      '<a target="_blank" rel="noopener" href="https://www.caib.es/sites/reservesmarines/es/regulacian_de_actividades/">Dragonera</a> · ' +
+      '<a target="_blank" rel="noopener" href="https://www.caib.es/sites/reservesmarines/es/regulacian_de_actividades_0/">Ponent</a></li>' +
+      T('<li>Координаты 10 точек сверены по картам пляжей; остальные и парковки — примерные, проверяйте на месте.</li>') +
       T('<li>Погода: Open-Meteo. Карта: OpenStreetMap.</li><li>Сомнения по заповедникам: 971 176 100.</li></ul></div>') +
-      T('<p class="foot">Рыбалка Майорка · версия 2.0 · данные хранятся только в этом телефоне.</p>');
+      T('<p class="foot">Рыбалка Майорка · версия 2.1 · данные хранятся только в этом телефоне.</p>');
   }
 
   async function doExport() {
