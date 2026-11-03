@@ -291,7 +291,48 @@
   // wx = { t:[iso], wind:[], gust:[], dir:[], press:[], cloud:[], rain:[], temp:[], wave:[], wper:[], sst:[], sunrise:[iso], sunset:[iso] }
   function angDiff(a,b){ let d=Math.abs(a-b)%360; return d>180?360-d:d; }
 
-  function hourScore(spot, wx, i, tech) {
+  // ---------- Солунар (положение луны, упрощённая формула) ----------
+  const RAD = Math.PI/180;
+  function moonAlt(ms, lat, lon) {
+    const d = ms/864e5 - 0.5 + 2440588 - 2451545, e = RAD*23.4397;
+    const L = RAD*(218.316+13.176396*d), M = RAD*(134.963+13.064993*d), F = RAD*(93.272+13.229350*d);
+    const l = L + RAD*6.289*Math.sin(M), b = RAD*5.128*Math.sin(F);
+    const ra = Math.atan2(Math.sin(l)*Math.cos(e) - Math.tan(b)*Math.sin(e), Math.cos(l));
+    const dec = Math.asin(Math.sin(b)*Math.cos(e) + Math.cos(b)*Math.sin(e)*Math.sin(l));
+    const H = RAD*(280.16+360.9856235*d) + RAD*lon - ra, phi = RAD*lat;
+    return Math.asin(Math.sin(phi)*Math.sin(dec) + Math.cos(phi)*Math.cos(dec)*Math.cos(H));
+  }
+  const solCache = {};
+  // Главные периоды: ±1 ч от верхней и нижней кульминации луны. Малые: ±30 мин от восхода и захода луны.
+  function solunar(dayKey, lat, lon) {
+    lat = lat || 39.6; lon = lon || 3.0;
+    const key = dayKey + lat.toFixed(1) + lon.toFixed(1); if (solCache[key]) return solCache[key];
+    const t0 = new Date(dayKey + 'T00:00').getTime() - 3*3600000, step = 600000, pts = [];
+    for (let t = t0; t <= t0 + 30*3600000; t += step) pts.push([t, moonAlt(t, lat, lon)]);
+    const major = [], minor = [], dayA = t0 + 3*3600000, dayB = dayA + 864e5;
+    for (let k = 1; k < pts.length-1; k++) {
+      const [t, a] = pts[k], p = pts[k-1][1], n = pts[k+1][1];
+      if ((a > p && a >= n) || (a < p && a <= n)) { if (t >= dayA && t < dayB) major.push([t-3600000, t+3600000, t]); }
+      if ((p < 0) !== (a < 0) && t >= dayA && t < dayB) minor.push([t-1800000, t+1800000, t]);
+    }
+    return solCache[key] = { major, minor };
+  }
+  function inSol(sol, ms) {
+    if (sol.major.some(([a,b]) => ms >= a && ms <= b)) return 2;
+    if (sol.minor.some(([a,b]) => ms >= a && ms <= b)) return 1;
+    return 0;
+  }
+  // Подсказка веса груза по течению (км/ч)
+  function sinker(cur) {
+    if (cur == null) return null;
+    return cur < 1 ? T('80–100 г') : cur < 2 ? T('120–150 г') : T('150 г и больше, груз с якорями');
+  }
+  // Лучшие месяцы для вида (по опыту рыбаков, не закон)
+  const BEST = { dorada:[10,11,12,1,2,3,4], lubina:[10,11,12,1,2,3], sargo:[9,10,11,12,1,2,3,4,5], denton:[4,5,6,9,10], mero:[], gitano:[],
+    lampuga:[8,9,10,11,12], raor:[9,10,11], calamar:[10,11,12,1,2], pulpo:[3,4,5,9,10], erizo:[12,1,2,3], cangrejo:[6,7,8,9,10],
+    oblada:[4,5,6,7,8,9,10], mabre:[5,6,7,8,9,10], lecha:[6,7,8,9,10,11], anjova:[9,10,11] };
+
+  function hourScore(spot, wx, i, tech, pers) {
     const date = new Date(wx.t[i]);
     const dk = wx.t[i].slice(0,10), dIdx = wx.days.indexOf(dk);
     const sun = dIdx>=0 ? { sr:new Date(wx.sunrise[dIdx]).getTime(), ss:new Date(wx.sunset[dIdx]).getTime() } : null;
@@ -346,6 +387,16 @@
     if (sst!=null) { if (sst<14) s-=5; else if (sst>=16 && sst<=24) s+=3; }
     // Луна
     const mp = moonPhase(date); if (mp<0.1||mp>0.9||Math.abs(mp-0.5)<0.1) s+=5;
+    // Солунар
+    const sl = inSol(solunar(wx.t[i].slice(0,10), spot.lat, spot.lon), date.getTime());
+    if (sl===2) { s+=6; r.tags.push(T('солунар: главный период')); } else if (sl===1) { s+=3; r.tags.push(T('солунар: малый период')); }
+    // Длинная зыбь опасна на скалах
+    const wper = wx.wper ? wx.wper[i] : null;
+    if (rock && wave!=null && wave>=1.0 && wper!=null && wper>=8) { r.danger=true; s-=10; r.tags.push(T('длинная зыбь')); }
+    // Резкое похолодание воды за 2 дня
+    if (sst!=null) { let mx=sst; for (let k=Math.max(0,i-48);k<i;k++) if (wx.sst[k]!=null) mx=Math.max(mx,wx.sst[k]); if (mx-sst>=2) { s-=6; r.tags.push(T('вода холодает')); } }
+    // Ваши удачные часы по журналу
+    if (pers && pers.hours && pers.hours.has(date.getHours())) { s+=4; r.tags.push(T('ваши часы')); }
     // Поправки под технику
     if (tech && sun) {
       const t2=date.getTime(), m2=date.getMonth()+1, dusk=Math.abs(t2-sun.ss)/3600000, dark=t2>sun.ss&&t2<sun.ss+3*3600000;
@@ -361,12 +412,12 @@
   }
 
   // Лучшее окно (2 часа) на дату для точки
-  function bestWindow(spot, wx, dayKey, fromMs, tech) {
+  function bestWindow(spot, wx, dayKey, fromMs, tech, pers) {
     let best=null;
     for (let i=0;i<wx.t.length-1;i++) {
       if (wx.t[i].slice(0,10)!==dayKey) continue;
       if (fromMs && new Date(wx.t[i]).getTime() < fromMs - 3600000) continue;
-      const a=hourScore(spot,wx,i,tech), b=hourScore(spot,wx,i+1,tech);
+      const a=hourScore(spot,wx,i,tech,pers), b=hourScore(spot,wx,i+1,tech,pers);
       if (!a.legal.ok || !b.legal.ok) continue;
       const avg=(a.score+b.score)/2;
       if (!best || avg>best.score) best={ score:Math.round(avg), i, tags:[...new Set([...a.tags,...b.tags])], danger:a.danger||b.danger, unsure:a.legal.unsure };
@@ -414,6 +465,7 @@
         t:h.time, wind:h.wind_speed_10m, gust:h.wind_gusts_10m, dir:h.wind_direction_10m, press:h.pressure_msl,
         cloud:h.cloud_cover, rain:h.precipitation, temp:h.temperature_2m,
         wave:h.time.map(t=>pick(mh.wave_height,t)), wper:h.time.map(t=>pick(mh.wave_period,t)), sst:h.time.map(t=>pick(mh.sea_surface_temperature,t)),
+        sea:h.time.map(t=>pick(mh.sea_level_height_msl,t)), cur:h.time.map(t=>pick(mh.ocean_current_velocity,t)), curDir:h.time.map(t=>pick(mh.ocean_current_direction,t)),
         days:f.daily.time, sunrise:f.daily.sunrise, sunset:f.daily.sunset
       };
     };
@@ -428,12 +480,12 @@
         '&hourly=temperature_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,pressure_msl,cloud_cover,precipitation'+
         '&daily=sunrise,sunset&timezone=Europe%2FMadrid&past_days=1&forecast_days=3',
       mar: 'https://marine-api.open-meteo.com/v1/marine?latitude='+lat+'&longitude='+lon+
-        '&hourly=wave_height,wave_period,sea_surface_temperature&timezone=Europe%2FMadrid&past_days=1&forecast_days=3'
+        '&hourly=wave_height,wave_period,sea_surface_temperature,sea_level_height_msl,ocean_current_velocity,ocean_current_direction&timezone=Europe%2FMadrid&past_days=1&forecast_days=3'
     };
   }
 
   SPOTS.forEach(sp => { sp.tech = SPOT_TECH[sp.id] || []; sp.parkQ = PARK_Q[sp.id] || ''; });
 
   root.FishCore = { RESERVES, SPOTS, FISH, TALLAS_URL, RULES_URL, legal, fishOpen, checkCatch, moonPhase, moonName,
-    hourScore, bestWindow, tackle, TECH, parseWeather, weatherUrls, isHoliday, ymd, DOW, angDiff };
+    hourScore, bestWindow, tackle, TECH, solunar, inSol, sinker, BEST, parseWeather, weatherUrls, isHoliday, ymd, DOW, angDiff };
 })(typeof self !== 'undefined' ? self : this);
