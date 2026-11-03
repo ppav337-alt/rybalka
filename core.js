@@ -43,8 +43,9 @@
       warn:T('Северо-восточнее Cala Mata — заповедник Llevant (вт, чт, сб, вс). От Cap Ferrutx до Penya del Llamp ловить нельзя.') },
     { id:'estrenc', name:'Es Trenc – Colònia de Sant Jordi', area:T('Юг'), lat:39.3433, lon:2.9839, type:'beach', depth:'shallow', face:220, reserve:'migjorn',
       fish:T('Дорада, мабре, сибас в шторм'), methods:T('Сурф-кастинг'), parking:T('Платные парковки Ses Covetes / Sa Ràpita, летом заполняются к полудню'), q:'Es Trenc parking Ses Covetes', src:'atlas' },
-    { id:'malpas', name:'Mal Pas – Bonaire (Alcúdia)', area:T('Север'), lat:39.8680, lon:3.1650, type:'rock', depth:'mid', face:0, reserve:'none',
-      fish:T('Сарг, луфарь сен–ноя, кальмар'), methods:T('Спиннинг, эги, поплавок'), parking:T('Небольшие площадки вдоль дороги и улицы Bonaire, летом мало мест'), q:'Mal Pas Bonaire Alcudia', src:'atlas' },
+    { id:'malpas', name:'Mal Pas – Bonaire (Alcúdia)', area:T('Север'), lat:null, lon:null, type:'rock', depth:'mid', face:0, reserve:'none',
+      fish:T('Сарг, луфарь сен–ноя, кальмар'), methods:T('Спиннинг, эги, поплавок'), parking:T('Не проверено'), q:'Port de Bonaire Alcúdia', src:'atlas',
+      warn:T('Точка не проверена: прежние координаты стояли на склоне, не у воды. Место ловли и парковку уточняем на месте.') },
     { id:'namer', name:'Punta de n\'Amer (Sa Coma)', area:T('Восток'), lat:39.5850, lon:3.3980, type:'rock', depth:'mid', face:90, reserve:'none',
       fish:T('Сарг, облада, кальмар, лампуга осенью'), methods:T('Поплавок, эги, спиннинг'), parking:T('Стоянки и улицы Sa Coma, дальше на мыс только пешком'), q:'Punta de n\'Amer Sa Coma', src:'atlas' },
     { id:'portocolom', name:T('Portocolom – маяк'), area:T('Восток'), lat:39.4140, lon:3.2730, type:'rock', depth:'mid', face:100, reserve:'none',
@@ -156,7 +157,7 @@
   const PARK_PT = {};
   const PARK_Q = {
     sonserra:'Aparcament Son Serra de Marina platja', picafort:'Aparcament Son Bauló Can Picafort', alcanada:'Aparcament Platja d\'Alcanada',
-    betlem:'Betlem Artà aparcament', estrenc:'Aparcament Ses Covetes Es Trenc', malpas:'Aparcament Mal Pas Bonaire Alcúdia',
+    betlem:'Betlem Artà aparcament', estrenc:'Aparcament Ses Covetes Es Trenc', malpas:'Port de Bonaire Alcúdia parking',
     namer:'Aparcament Punta de n\'Amer Sa Coma', portocolom:'Far de Portocolom', santvicenc:'Aparcament Cala Sant Vicenç',
     calablava:'Cala Blava Llucmajor', capdepera:'Far de Capdepera aparcament', soller:'Aparcament Far de sa Creu Port de Sóller',
     formentor:'Aparcament Far de Formentor', salines:'Aparcament Far de ses Salines', figuera:'Aparcament Cala Figuera Santanyí',
