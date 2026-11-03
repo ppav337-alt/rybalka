@@ -401,7 +401,7 @@
       T('<label>Точка<select name="spot">') + spots.map(s => '<option value="' + esc(s.id) + '"' + (s.id === spotId ? ' selected' : '') + '>' + esc(s.name) + '</option>').join('') + '</select></label>' +
       T('<label>Рыба<select name="fish"><option value="">Без улова</option>') + C.FISH.map(f => '<option value="' + f.id + '">' + esc(f.ru) + '</option>').join('') + T('<option value="other">Другая</option></select></label>') +
       T('<div class="row"><label>Длина, см<input name="len" type="number" inputmode="decimal" step="0.5"></label><label>Вес, кг<input name="kg" type="number" inputmode="decimal" step="0.05"></label></div>') +
-      T('<div class="row"><label>Способ<select name="method"><option></option><option>Серфкастинг</option><option>Донка</option><option>Поплавок</option><option>Спиннинг</option><option>Эги</option><option>Живец</option></select></label>') +
+      T('<div class="row"><label>Способ<select name="method"><option></option><option>Сурф-кастинг</option><option>Донка</option><option>Поплавок</option><option>Спиннинг</option><option>Эги</option><option>Живец</option></select></label>') +
       T('<label>Наживка<input name="bait" placeholder="креветка, воблер…"></label></div>') +
       T('<label>Улов<select name="kept"><option value="">—</option><option value="released">Отпустил</option><option value="kept">Оставил</option></select></label>') +
       T('<label>Фото<input name="photo" type="file" accept="image/*" capture="environment"></label>') +

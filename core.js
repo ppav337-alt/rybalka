@@ -26,16 +26,16 @@
   // face: куда «смотрит» берег (азимут моря, градусы). Координаты примерные.
   const SPOTS = [
     { id:'sonserra', name:'Son Serra de Marina', area:T('Север'), lat:39.7339, lon:3.2300, type:'beach', depth:'shallow', face:20, reserve:'none',
-      fish:T('Дорада, мабре, сарг; сибас у устья окт–мар'), methods:T('Серфкастинг, донка'), parking:T('Улицы посёлка у пляжа'), q:'Platja de Son Serra de Marina', src:'atlas' },
+      fish:T('Дорада, мабре, сарг; сибас у устья окт–мар'), methods:T('Сурф-кастинг, донка'), parking:T('Улицы посёлка у пляжа'), q:'Platja de Son Serra de Marina', src:'atlas' },
     { id:'picafort', name:'Can Picafort – Son Bauló', area:T('Север'), lat:39.7610, lon:3.1680, type:'beach', depth:'shallow', face:45, reserve:'none',
-      fish:T('Мабре, дорада, сарг, облада'), methods:T('Ночной серфкастинг'), parking:T('Набережная, зона Son Bauló'), q:'Platja de Son Baulo Can Picafort', src:'atlas' },
+      fish:T('Мабре, дорада, сарг, облада'), methods:T('Ночной сурф-кастинг'), parking:T('Набережная, зона Son Bauló'), q:'Platja de Son Baulo Can Picafort', src:'atlas' },
     { id:'alcanada', name:'Alcanada (Alcúdia)', area:T('Север'), lat:39.8370, lon:3.1630, type:'rock', depth:'shallow', face:100, reserve:'none',
       fish:T('Облада, сарг, кальмар окт–янв'), methods:T('Поплавок, эги на закате'), parking:T('У Platja d\'Alcanada'), q:'Platja d\'Alcanada Alcudia', src:'atlas' },
     { id:'betlem', name:'Colònia de Sant Pere – Betlem', area:T('Северо-восток'), lat:39.7270, lon:3.3020, type:'rock', depth:'shallow', face:300, reserve:'none',
       fish:T('Лампуга авг–дек, кальмар, сарг'), methods:T('Лёгкий спиннинг, эги, поплавок'), parking:T('Конец дороги в Betlem'), q:'Betlem Arta Mallorca', src:'atlas',
       warn:T('Восточнее Cap Ferrutx — запретная зона заповедника.') },
     { id:'estrenc', name:'Es Trenc – Colònia de Sant Jordi', area:T('Юг'), lat:39.3470, lon:2.9740, type:'beach', depth:'shallow', face:220, reserve:'migjorn',
-      fish:T('Дорада, мабре, сибас в шторм'), methods:T('Серфкастинг'), parking:T('Платные парковки Ses Covetes / Sa Ràpita'), q:'Es Trenc parking Ses Covetes', src:'atlas' },
+      fish:T('Дорада, мабре, сибас в шторм'), methods:T('Сурф-кастинг'), parking:T('Платные парковки Ses Covetes / Sa Ràpita'), q:'Es Trenc parking Ses Covetes', src:'atlas' },
     { id:'malpas', name:'Mal Pas – Bonaire (Alcúdia)', area:T('Север'), lat:39.8680, lon:3.1650, type:'rock', depth:'mid', face:0, reserve:'none',
       fish:T('Сарг, луфарь сен–ноя, кальмар'), methods:T('Спиннинг, эги, поплавок'), parking:T('Вдоль дороги Mal Pas'), q:'Mal Pas Bonaire Alcudia', src:'atlas' },
     { id:'namer', name:'Punta de n\'Amer (Sa Coma)', area:T('Восток'), lat:39.5850, lon:3.3980, type:'rock', depth:'mid', face:90, reserve:'none',
@@ -77,11 +77,11 @@
     { id:'songranada', name:'Ses Olles de Son Granada', area:T('Юг'), lat:39.3550, lon:2.9050, type:'rock', depth:'mid', face:190, reserve:'migjorn',
       fish:T('Сарг, сибас'), methods:T('Лёгкий спиннинг, донка'), parking:T('Пешком по скалам'), q:'Ses Olles Son Granada de Baix Mallorca', src:'chatgpt' },
     { id:'clotsase', name:'Escar del Clot de s\'Ase', area:T('Юг'), lat:39.3620, lon:2.9550, type:'rock', depth:'shallow', face:200, reserve:'migjorn',
-      fish:T('Дорада, сарг'), methods:T('Донка, серфкастинг'), parking:T('Пешком из Sa Ràpita'), q:'Escar del Clot de s\'Ase Mallorca', src:'chatgpt' },
+      fish:T('Дорада, сарг'), methods:T('Донка, сурф-кастинг'), parking:T('Пешком из Sa Ràpita'), q:'Escar del Clot de s\'Ase Mallorca', src:'chatgpt' },
     { id:'almunia', name:'Cala s\'Almunia', area:T('Юго-восток'), lat:39.2990, lon:3.1220, type:'rock', depth:'mid', face:150, reserve:'migjorn',
       fish:T('Сарг, сибас, дорада'), methods:T('Донка, поплавок'), parking:T('Крутой спуск'), q:'Cala s\'Almunia Mallorca', src:'chatgpt' },
     { id:'llombards', name:'Cala Llombards', area:T('Юго-восток'), lat:39.3270, lon:3.1440, type:'beach', depth:'shallow', face:140, reserve:'migjorn',
-      fish:T('Дорада, сарг'), methods:T('Серфкастинг'), parking:T('Сезонная, мало мест'), q:'Cala Llombards Mallorca', src:'chatgpt' },
+      fish:T('Дорада, сарг'), methods:T('Сурф-кастинг'), parking:T('Сезонная, мало мест'), q:'Cala Llombards Mallorca', src:'chatgpt' },
     { id:'pontas', name:T('Es Pontàs (ориентир)'), area:T('Юго-восток'), lat:39.3335, lon:3.1470, type:'rock', depth:'deep', face:130, reserve:'migjorn',
       fish:'—', methods:T('Не место для рыбалки'), parking:T('Смотровая площадка'), q:'Es Pontas Mallorca', src:'chatgpt', noFish:true,
       warn:T('Смотровая на обрыве, не рыболовная точка.') },
@@ -90,7 +90,7 @@
       warn:T('Смотровая на обрыве. Координаты не известны — откройте поиск на карте.') },
     // голубой краб — вероятные места (солоноватая вода у моря)
     { id:'crab_muro', name:T('Устье канала s\'Albufera (Platja de Muro)'), area:T('Север'), lat:39.7990, lon:3.1170, type:'beach', depth:'shallow', face:45, reserve:'none',
-      fish:T('Голубой краб; сибас у устья'), methods:T('Сачок днём; серф ночью'), parking:T('Парковка у Pont dels Anglesos'), q:'Pont dels Anglesos Platja de Muro', src:'atlas',
+      fish:T('Голубой краб; сибас у устья'), methods:T('Сачок днём; сурф ночью'), parking:T('Парковка у Pont dels Anglesos'), q:'Pont dels Anglesos Platja de Muro', src:'atlas',
       warn:T('Только со стороны моря: внутри s\'Oberta и парка s\'Albufera ловить нельзя.'), crabOnly:false },
     { id:'crab_fontanelles', name:'Ses Fontanelles (Can Pastilla)', area:T('Юг (Пальма)'), lat:39.5345, lon:2.7175, type:'beach', depth:'shallow', face:200, reserve:'none',
       fish:T('Голубой краб'), methods:T('Сачок днём'), parking:T('Улицы Can Pastilla'), q:'Ses Fontanelles Can Pastilla', src:'atlas',
@@ -115,7 +115,7 @@
       when:T('Утро и вечер, пасмурно. Ловить вдоль стенки и в белой воде у камней.'),
       season:T('Круглый год; сарг лучше осень–весна.'),
       rules:T('Минимальные размеры сарга 23 см, дорады 20 см (35 см в заповеднике).') },
-    surf: { name:T('Серфкастинг'), short:T('Серф'), icon:'🏖',
+    surf: { name:T('Сурф-кастинг'), short:T('Сурф'), icon:'🏖',
       gear:[T('Удилище 4,2–4,5 м, тест 100–200 г, 2 удилища максимум'),T('Катушка 6000–8000 с длинной шпулей, леска 0,25–0,30 или шнур + шок-лидер 0,50'),T('Груз 80–150 г (пирамида или с якорями при течении)')],
       bait:[T('Монтаж «падаюший» или 2 поводка, крючок №2–6'),T('Наживка: покупные черви (корея, американа, тита), креветка, сардина, кальмар'),T('Ночью и после шторма — сардина/кальмар на сибаса и дораду')],
       when:T('Ночь, рассвет, мутная вода после шторма, волна 0,3–1,0 м.'),
@@ -161,9 +161,9 @@
   // min: см (общ.), minRes: см в заповеднике, limit: шт/день, open: [мес_с, мес_по] когда МОЖНО (1–12), closed: [месяцы] когда нельзя
   const FISH = [
     { id:'dorada', ru:T('Дорада'), es:'Dorada', ca:'Orada', lat:'Sparus aurata', min:20, minRes:35, limit:2,
-      tips:T('Серфкастинг и донка с песка, ночь и рассвет. Наживка: краб из магазина, креветка, черви (покупные). Лучше осень–весна.') },
+      tips:T('Сурф-кастинг и донка с песка, ночь и рассвет. Наживка: краб из магазина, креветка, черви (покупные). Лучше осень–весна.') },
     { id:'lubina', ru:T('Сибас (лаврак)'), es:'Lubina', ca:'Llobarro', lat:'Dicentrarchus labrax', min:25, minRes:43, limit:1, pescarec:true,
-      tips:T('После шторма в мутной воде у пляжей и устьев. Воблеры 9–12 см, серфкастинг с сардиной. Окт–мар.') },
+      tips:T('После шторма в мутной воде у пляжей и устьев. Воблеры 9–12 см, сурф-кастинг с сардиной. Окт–мар.') },
     { id:'sargo', ru:T('Сарг'), es:'Sargo', ca:'Sard', lat:'Diplodus sargus', min:23,
       tips:T('Скалы, белая вода у камней. Поплавок или донка, креветка, мидия из магазина, хлеб с прикормкой.') },
     { id:'denton', ru:T('Зубан'), es:'Dentón', ca:'Déntol', lat:'Dentex dentex', min:35, limit:2, mark:true,
@@ -187,7 +187,7 @@
     { id:'oblada', ru:T('Облада'), es:'Oblada', ca:'Oblada', lat:'Oblada melanura', check:true,
       tips:T('Поплавок с хлебом у поверхности, прикормка. Мин. размер — проверить в таблице талий.') },
     { id:'mabre', ru:T('Мабре (херрера)'), es:'Herrera', ca:'Mabre', lat:'Lithognathus mormyrus', check:true,
-      tips:T('Песок у берега, ночной серфкастинг, черви. Мин. размер — проверить.') },
+      tips:T('Песок у берега, ночной сурф-кастинг, черви. Мин. размер — проверить.') },
     { id:'lecha', ru:T('Лича (сериола)'), es:'Serviola', ca:'Cirviola', lat:'Seriola dumerili', check:true,
       tips:T('Глубокие мысы, живец, тяжёлые воблеры. Мин. размер — проверить.') },
     { id:'anjova', ru:T('Луфарь'), es:'Anjova', ca:'Anxova', lat:'Pomatomus saltatrix', check:true,
@@ -385,7 +385,7 @@
     if (spot.noFish) return [T('Не место для рыбалки.')];
     if (seasonalOnly) {}
     else if (spot.type==='beach') {
-      out.push(T('Серфкастинг 4–4,5 м, груз 80–150 г, поводок 0,25–0,30, крючок №4–6.'));
+      out.push(T('Сурф-кастинг 4–4,5 м, груз 80–150 г, поводок 0,25–0,30, крючок №4–6.'));
       out.push(T('Наживка: покупные черви (корея, американа), креветка; ночью сардина.'));
       if (m>=10||m<=3) out.push(T('После шторма в мутной воде — сибас на сардину или воблер 12 см.'));
     } else if (spot.depth==='shallow') {
