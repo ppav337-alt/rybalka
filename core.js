@@ -404,6 +404,46 @@
     return best;
   }
 
+  // Готовая снасть под место, рыбу и погоду в час i. Возвращает { fish, lines[] }
+  function rigNow(spot, wx, i, fid, tech) {
+    const date = new Date(wx.t[i]), m = date.getMonth() + 1, t = date.getTime();
+    const dk = wx.t[i].slice(0, 10), di = wx.days.indexOf(dk);
+    const sr = di >= 0 ? new Date(wx.sunrise[di]).getTime() : 0, ss = di >= 0 ? new Date(wx.sunset[di]).getTime() : 0;
+    const dusk = Math.abs(t - ss) <= 5400000, dark = t > ss + 1800000 || t < sr - 1800000, dawn = Math.abs(t - sr) <= 5400000;
+    const wave = wx.wave[i], wind = wx.wind[i], cur = wx.cur ? wx.cur[i] : null;
+    let maxW = 0; for (let k = Math.max(0, i - 24); k < i; k++) if (wx.wave[k] != null) maxW = Math.max(maxW, wx.wave[k]);
+    const murky = maxW > 1.5 && wave != null && wave < 1.2;
+    // Какую рыбу ловим: выбранную, иначе лучшую по сезону на этом месте
+    // Краб только днём и в тёплый сезон
+    const list = (SPOT_FISH[spot.id] || []).filter(id => { const f = FISH.find(x => x.id === id); return f && fishOpen(f, date) && (id !== 'cangrejo' || (!dark && t < ss && (BEST.cangrejo || []).includes(m))); });
+    if (!fid || !list.includes(fid)) {
+      const byTech = { squid: 'calamar', crab: 'cangrejo' }[tech];
+      fid = (byTech && list.includes(byTech)) ? byTech
+        : (m >= 10 || m <= 2) && (dusk || dark) && list.includes('calamar') && (wave == null || wave <= 0.8) ? 'calamar'
+        : murky && list.includes('lubina') ? 'lubina'
+        : list.find(id => (BEST[id] || []).includes(m) && id !== 'cangrejo') || list[0] || null;
+    }
+    const f = FISH.find(x => x.id === fid), L = [];
+    const lead = cur != null ? sinker(cur) : wave == null ? T('80–100 г') : wave < 0.5 ? T('60–80 г') : wave < 1.0 ? T('100–120 г') : T('150 г и больше, груз с якорями');
+    const egi = (wave != null && wave < 0.4 && (wind == null || wind < 12)) ? '2.5' : (wave == null || wave <= 0.8) ? '3.0' : '3.5';
+    const color = dark ? T('светящийся') : dusk ? T('оранжевый или розовый') : T('натуральный (креветка, коричневый)');
+    switch (fid) {
+      case 'calamar': L.push(T('Эги ') + egi + ', ' + color, T('Флюр 0,22–0,28 мм, 1,5–2 м'), T('2–3 рывка вверх, пауза 5–10 с')); break;
+      case 'lubina': if (spot.type === 'beach') L.push(murky ? T('Сардина на сурф-кастинг или воблер 12 см натурального цвета') : T('Сурф-кастинг с сардиной или кальмаром'), T('Груз ') + lead); else L.push(T('Воблер-минноу 9–12 см, медленная проводка')); L.push(T('Поводок флюр 0,30–0,35 мм')); break;
+      case 'dorada': L.push(T('Сурф-кастинг, крючок №2–4, наживка: краб или креветка'), T('Груз ') + lead, dark || dawn ? T('Лучшее время: ночь и рассвет') : T('Днём забрасывать дальше, за прибой')); break;
+      case 'mabre': L.push(T('Сурф-кастинг, тонкий поводок 0,22, крючок №6–8'), T('Наживка: черви (корея, американа)'), T('Груз ') + lead); break;
+      case 'sargo': L.push(spot.type === 'beach' ? T('Сурф-кастинг, крючок №4–6, креветка или мидия') : wave != null && wave >= 0.5 ? T('Поплавок 3–5 г в белой воде у камней, креветка') : T('Поплавок 1–2 г или силикон 2" на джиг-головке 3–5 г'), T('Поводок флюр 0,20–0,25 мм')); break;
+      case 'oblada': L.push(T('Поплавок 1–2 г у поверхности, хлеб'), T('Прикормка: хлеб с сардиной'), T('Поводок 0,18–0,20 мм, крючок №10–12')); break;
+      case 'denton': L.push(T('Стикбейт или воблер 12–14 см'), dawn ? T('Рассвет — лучшее время') : T('Лучше на рассвете'), T('Пометить хвост, лимит 2 шт')); break;
+      case 'lampuga': case 'lecha': case 'anjova': L.push(T('Металл ') + (wind != null && wind > 20 ? '30–40' : '20–30') + T(' г или поппер 10–14 см'), fid === 'anjova' ? T('Стальной поводок') : T('Поводок флюр 0,35–0,45 мм'), T('Быстрая проводка с мыса')); break;
+      case 'raor': L.push(T('Крючок №12–14, кусочки креветки'), T('Песчаное дно 5–20 м')); break;
+      case 'cangrejo': L.push(T('Сачок (salabre), приманка: рыбьи головы или курица'), T('Только днём, до 2 кг')); break;
+      default: return { fish: null, lines: tackle(spot, date, false).slice(0, 2) };
+    }
+    if (spot.reserve !== 'none') L.push(T('Заповедник: 1 снасть на человека'));
+    return { fish: f, lines: L };
+  }
+
   // Выше 85 оценка растёт плавно: так лучшие места не слипаются на 100
   function cap(s) { return Math.max(0, Math.min(100, Math.round(s <= 85 ? s : 85 + 15 * (1 - Math.exp(-(s - 85) / 20))))); }
 
@@ -579,5 +619,5 @@
   SPOTS.forEach(sp => { sp.tech = SPOT_TECH[sp.id] || []; sp.parkQ = PARK_Q[sp.id] || ''; sp.parkPt = PARK_PT[sp.id] || null; });
 
   root.FishCore = { RESERVES, SPOTS, FISH, TALLAS_URL, RULES_URL, legal, fishOpen, checkCatch, moonPhase, moonName,
-    hourScore, bestWindow, cap, SPOT_FISH, spotHasFish, likeMine, tackle, TECH, solunar, inSol, sinker, BEST, parseWeather, weatherUrls, isHoliday, ymd, DOW, angDiff };
+    hourScore, bestWindow, cap, rigNow, SPOT_FISH, spotHasFish, likeMine, tackle, TECH, solunar, inSol, sinker, BEST, parseWeather, weatherUrls, isHoliday, ymd, DOW, angDiff };
 })(typeof self !== 'undefined' ? self : this);

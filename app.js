@@ -56,6 +56,7 @@
     pack: store.get('pack', {}),            // сборы {day, done:[]}
     showF: false,
     showFish: false,
+    tilesAt: store.get('tilesAt', null),
     fishView: 'fish',
     wx: store.get('wx', null),                // { at, ids:[], data:[...] }
     loading: false, err: null
@@ -80,6 +81,15 @@
     return Math.round(2 * R * Math.asin(Math.sqrt(h)));
   }
   const hhmm = iso => iso ? iso.slice(11, 16) : '';
+  // Время в пути: дорога в 1,25 раза длиннее прямой, в среднем 65 км/ч, плюс 10 минут на парковку и дорогу к воде
+  const driveMin = s => Math.round(km(S.settings.home, s) * 1.25 / 65 * 60 + 10);
+  // Когда выезжать, чтобы успеть к началу окна. Возвращает { at: Date, min } или null
+  function leaveAt(s, iso) { const min = driveMin(s), at = new Date(new Date(iso).getTime() - min * 60000); return { at, min }; }
+  const hm = d => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  function rigLine(s, wx, i) {
+    const r = C.rigNow(s, wx, i, S.settings.fish, curTech()); if (!r.lines.length) return '';
+    return '<div class="rig"><b>🎣 ' + T('Снасть на ') + hhmm(wx.t[i]) + (r.fish ? ' · ' + esc(r.fish.ru) : '') + ':</b> ' + r.lines.map(esc).join(' · ') + '</div>';
+  }
   function addH(iso, h) { const d = new Date(iso); d.setHours(d.getHours() + h); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
   const ICON = {
     wind: '<svg viewBox="0 0 24 24"><path d="M3 8h11a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h7"/></svg>',
@@ -244,9 +254,15 @@
         (b.tags.length ? '<div class="tags">' + b.tags.slice(0, 3).map(x => '<span class="' + tagTone(x) + '">' + tagIcon(x) + esc(x) + '</span>').join('') + '</div>' : '') +
         (b.danger ? T('<div class="danger">⚠ Опасно на скалах: волна или порывы</div>') : '');
       const hero = !heroDone && b.score >= 50; heroDone = true;
+      let go = '';
+      if (hero) {
+        const la = leaveAt(s, t), late = la.at.getTime() < Date.now();
+        go = '<div class="go">🚗 ' + (S.day === 0 && late ? T('Пора выезжать: дорога около ') + la.min + T(' мин') : T('Выезжать в ') + hm(la.at) + T(' (дорога около ') + la.min + T(' мин)')) + '</div>';
+        planLeave(s, t, la);
+      }
       const why = hero && b.why && b.why.length ? '<div class="why"><b>' + T('Почему здесь:') + '</b> ' + b.why.slice(0, 3).map(esc).join(', ') + '</div>' : '';
       const qadd = '<span class="qadd" role="button" data-act="addcatch" data-spot="' + esc(s.id) + '">＋ ' + T('Записать улов') + '</span>';
-      h += card(s, ring(b.score), why + info + qadd, dist, (S.day ? '<small>' + [T('сегодня'), T('завтра'), T('послезавтра')][S.day] + '</small> ' : '') + hhmm(t) + '–' + addH(t, 2), hero);
+      h += card(s, ring(b.score), why + go + (hero ? rigLine(s, wx, b.i) : '') + info + qadd, dist, (S.day ? '<small>' + [T('сегодня'), T('завтра'), T('послезавтра')][S.day] + '</small> ' : '') + hhmm(t) + '–' + addH(t, 2), hero);
     });
     h += T('</div><p class="foot">Оценка 0–100 по ветру, волне, давлению, времени суток, луне и мутности. Это подсказка, а не гарантия клёва.</p>') + '<p class="foot">' + T('В списке из оценки вычтен 1 балл за каждые 8 км от дома, поэтому при одинаковой погоде ближнее место стоит выше.') + '</p>';
     return h;
@@ -271,6 +287,8 @@
       '<button class="btn" data-act="addcatch" data-spot="' + esc(s.id) + T('">Записать улов</button>') +
       (s.lat == null ? '<a class="btn" target="_blank" rel="noopener" href="' + searchLink(s) + T('">Найти на карте</a>') : '') +
       '<button class="btn" data-act="pack" data-spot="' + esc(s.id) + '">🎒 ' + T('Сборы') + '</button><button class="btn" data-act="share">📤 ' + T('Отправить моё место') + '</button></div>';
+    if (wx) { const bw = C.bestWindow(s, wx, key, S.day === 0 ? Date.now() : 0, curTech(), pers());
+      if (bw && !bw.closed) { const la = leaveAt(s, wx.t[bw.i]); h += rigLine(s, wx, bw.i) + '<div class="go">🚗 ' + T('Лучшее окно ') + hhmm(wx.t[bw.i]) + '–' + addH(wx.t[bw.i], 2) + ' · ' + T('выезжать в ') + hm(la.at) + T(' (дорога около ') + la.min + T(' мин)') + '</div>'; } }
     if (wx) h += seaBlock(s, wx, key);
     h += T('<h3>Режим</h3><p><b>') + esc(res.name) + '.</b> ' + esc(res.note) + (res.url ? ' <a target="_blank" rel="noopener" href="' + res.url + T('">Правила</a>') : '') + '</p>';
     const L = C.legal(s, new Date(key + 'T12:00'));
@@ -839,6 +857,9 @@
     return T('<header class="top"><h1>Ещё</h1></header>') + langPanel() + licPanel() + T('<div class="panel"><h3>Уведомления</h3>') +
       T('<p>Вечером (после 18:00) приложение напомнит, где завтра лучший шанс. Работает, когда приложение установлено на главный экран.</p>') +
       '<button class="btn ' + (st.notif ? '' : 'pri') + '" data-act="notif">' + (st.notif ? T('Выключить') : T('Включить уведомления')) + '</button></div>' +
+      '<div class="panel"><h3>' + T('Карта без интернета') + '</h3><p>' + T('Скачает карту острова и участки вокруг всех мест (около 500 картинок, 10–15 МБ). Делайте по Wi‑Fi.') + '</p>' +
+      (S.tilesAt ? '<p class="muted">' + T('Скачано: ') + new Date(S.tilesAt).toLocaleDateString(LOC) + '</p>' : '') +
+      '<div id="tilestat"></div><button class="btn" data-act="tiles">' + (S.tilesAt ? T('Обновить карту') : T('Скачать карту')) + '</button></div>' +
       T('<div class="panel"><h3>Дом</h3><p>') + esc(st.home.name) + ' (' + st.home.lat.toFixed(3) + ', ' + st.home.lon.toFixed(3) + ')</p>' +
       T('<button class="btn" data-act="sethome">Мой дом — там, где я сейчас</button></div>') +
       T('<div class="panel"><h3>Резервная копия</h3><p>Точки, журнал и фото в одном файле. Делайте копию раз в месяц.</p>') +
@@ -857,7 +878,7 @@
       '<a target="_blank" rel="noopener" href="https://www.caib.es/sites/reservesmarines/es/regulacian_de_actividades_0/">Ponent</a></li>' +
       T('<li>Координаты 10 точек и описания 20 парковок сверены по описаниям пляжей (mallorcard.es); ограничения Formentor — по DGT 2026. Остальное примерно, проверяйте на месте.</li>') +
       T('<li>Погода: Open-Meteo. Карта: OpenStreetMap.</li><li>Сомнения по заповедникам: 971 176 100.</li></ul></div>') +
-      T('<p class="foot">Рыбалка Майорка · версия 2.15 · данные хранятся только в этом телефоне.</p>');
+      T('<p class="foot">Рыбалка Майорка · версия 2.16 · данные хранятся только в этом телефоне.</p>');
   }
 
   async function doExport() {
@@ -895,11 +916,26 @@
   async function saveSpotsForSW() {
     try { const c = await caches.open('ryb-data'); await c.put('/__spots', new Response(JSON.stringify({ spots: weatherSpots(), notif: S.settings.notif, lang: I18N.lang, home: S.settings.home }))); } catch (e) { }
   }
+  // Напоминание «пора выезжать»: ставится на сегодня для лучшего места, срабатывает, пока приложение открыто
+  let leaveTimer = null, leaveKey = '';
+  function planLeave(s, iso, la) {
+    if (S.day !== 0) return;
+    const ms = la.at.getTime() - Date.now(), key = s.id + iso;
+    if (key === leaveKey || ms < 0 || ms > 12 * 3600000) return;
+    leaveKey = key; clearTimeout(leaveTimer);
+    leaveTimer = setTimeout(async () => {
+      const text = T('Пора выезжать: ') + s.name + ', ' + T('клёв с ') + hhmm(iso) + T(', дорога около ') + la.min + T(' мин');
+      toast(text);
+      if (S.settings.notif && 'Notification' in window && Notification.permission === 'granted') {
+        try { const reg = await navigator.serviceWorker.ready; reg.showNotification(T('Рыбалка Майорка'), { body: text, icon: 'icon-192.png', tag: 'leave' }); } catch (e) { }
+      }
+    }, ms);
+  }
   function bestTomorrowText() {
     const r = ranking(1).filter(x => x.b && !x.b.closed);
     if (!r.length) return null;
     const { s, b, wx } = r[0];
-    return T('Завтра лучше всего: ') + s.name + ', ' + hhmm(wx.t[b.i]) + '–' + addH(wx.t[b.i], 2) + T(' (оценка ') + b.score + ')';
+    return T('Завтра лучше всего: ') + s.name + ', ' + hhmm(wx.t[b.i]) + '–' + addH(wx.t[b.i], 2) + T(' (оценка ') + b.score + ')' + T(', выезжать в ') + hm(leaveAt(s, wx.t[b.i]).at);
   }
   async function maybeNotify() {
     if (!S.settings.notif || !('Notification' in window) || Notification.permission !== 'granted') return;
@@ -919,6 +955,32 @@
   }
 
   // ---------- События ----------
+  // Тайлы OpenStreetMap: те же адреса, что запрашивает Leaflet, чтобы карта брала их из кэша
+  function tileList() {
+    const set = new Map(), add = (z, x, y) => { const s = 'abc'[Math.abs(x + y) % 3]; set.set(z + '/' + x + '/' + y, 'https://' + s + '.tile.openstreetmap.org/' + z + '/' + x + '/' + y + '.png'); };
+    const tx = (lon, z) => Math.floor((lon + 180) / 360 * 2 ** z), ty = (lat, z) => { const r = lat * Math.PI / 180; return Math.floor((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * 2 ** z); };
+    const box = (n, s, w, e, z) => { for (let x = tx(w, z); x <= tx(e, z); x++) for (let y = ty(n, z); y <= ty(s, z); y++) add(z, x, y); };
+    for (let z = 8; z <= 11; z++) box(40.0, 39.25, 2.3, 3.5, z);          // весь остров
+    allSpots().filter(s => s.lat != null).forEach(s => {                   // ~1 км вокруг каждого места
+      for (let z = 12; z <= 15; z++) box(s.lat + 0.009, s.lat - 0.009, s.lon - 0.012, s.lon + 0.012, z);
+    });
+    return [...set.values()];
+  }
+  let tilesBusy = false;
+  async function downloadTiles(btn) {
+    if (tilesBusy) return; if (navigator.onLine === false) { toast(T('Нужен интернет')); return; }
+    tilesBusy = true; btn.disabled = true;
+    const urls = tileList(), c = await caches.open('ryb-tiles'); let done = 0, fail = 0;
+    const stat = () => { const el = $('#tilestat'); if (el) el.innerHTML = '<p class="muted">' + T('Скачиваю карту: ') + done + ' / ' + urls.length + '</p>'; };
+    const queue = urls.slice();
+    // Не больше 2 запросов одновременно: бережём серверы OpenStreetMap
+    const worker = async () => { while (queue.length) { const u = queue.shift();
+      try { if (!(await c.match(u))) { const r = await fetch(u, { mode: 'cors' }); if (r.ok) await c.put(u, r); else fail++; } } catch (e) { fail++; }
+      done++; if (done % 10 === 0) stat(); } };
+    stat(); await Promise.all([worker(), worker()]);
+    tilesBusy = false; S.tilesAt = Date.now(); store.set('tilesAt', S.tilesAt);
+    toast(fail ? T('Карта скачана, не удалось: ') + fail : T('Карта скачана для работы без интернета')); render();
+  }
   function bindView() {
     const imp = $('#importfile'); if (imp) imp.onchange = e => e.target.files[0] && doImport(e.target.files[0]);
     const cf = $('#checkform');
@@ -961,6 +1023,7 @@
       case 'night': S.settings.night = !S.settings.night; store.set('settings', S.settings); applyNight(); render(); break;
       case 'togglef': S.showF = !S.showF; render(); break;
       case 'togglefish': S.showFish = !S.showFish; render(); break;
+      case 'tiles': downloadTiles(t); break;
       case 'pack': packView(id); break;
       case 'packreset': S.pack = { day: C.ymd(new Date()), done: [] }; store.set('pack', S.pack); document.querySelectorAll('[data-pack]').forEach(c => c.checked = false); break;
       case 'share': shareLoc(); break;
