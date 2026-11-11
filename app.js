@@ -49,7 +49,7 @@
     edits: store.get('edits', {}),            // правки координат встроенных точек
     hidden: store.get('hidden', []),
     journal: store.get('journal', []),
-    settings: store.get('settings', { home: { lat: 39.7646, lon: 3.1541, name: 'Can Picafort' }, filter: 'all', notif: false }),
+    settings: store.get('settings', { home: { lat: 39.5696, lon: 2.6502, name: 'Palma' }, filter: 'all', notif: false }),
     parks: store.get('parks', {}),
     lic: store.get('lic', null),            // лицензия {num, until, holder, p1, p2}          // свои отметки парковки {id:{lat,lon}}
     marks: store.get('marks', []),          // мои отметки на карте {id,lat,lon,kind,note,date}
@@ -67,7 +67,9 @@
     return base.concat(S.custom).filter(s => !S.hidden.includes(s.id));
   }
   const spotById = id => allSpots().find(s => s.id === id) || C.SPOTS.find(s => s.id === id) || S.custom.find(s => s.id === id);
-  const weatherSpots = () => allSpots().filter(s => s.lat != null && s.lon != null && !s.noFish);
+  // Личные точки: свои и встроенные, которые вы уточнили на карте. Их точные координаты не уходят в интернет
+  const isPrivate = s => s.src === 'mine' || !!(S.edits[s.id] && S.edits[s.id].lat != null);
+  const weatherSpots = () => allSpots().filter(s => s.lat != null && s.lon != null && !s.noFish).map(s => isPrivate(s) ? Object.assign({}, s, { priv: true }) : s);
 
   function wxFor(id) {
     if (!S.wx) return null;
@@ -131,7 +133,6 @@
     : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(s.q || s.name);
   const searchLink = s => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(s.q || s.name);
 
-  if (S.settings.home && S.settings.home.name === 'Santa Margalida') { S.settings.home = { lat: 39.7646, lon: 3.1541, name: 'Can Picafort' }; store.set('settings', S.settings); }
 
   // ---------- Погода ----------
   async function loadWeather(force) {
@@ -360,14 +361,21 @@
     } });
     return best;
   }
+  // Район вокруг личной точки (около 8×7 км): в OpenStreetMap уходит только он, точное место считается в телефоне
+  function privArea(s) {
+    const la = Math.round(s.lat / 0.02) * 0.02, lo = Math.round(s.lon / 0.02) * 0.02;
+    return { la, lo, bbox: [(la - 0.035).toFixed(3), (lo - 0.04).toFixed(3), (la + 0.035).toFixed(3), (lo + 0.04).toFixed(3)].join(',') };
+  }
   async function osmCheck(s) {
     const box = $('#osmbox'); if (!box || s.lat == null) return;
-    const k = s.lat + ',' + s.lon;
+    const priv = isPrivate(s), k = priv ? privArea(s).bbox : s.lat + ',' + s.lon;
     box.innerHTML = '<p class="muted">' + T('Ищу парковки и берег по OpenStreetMap…') + '</p>';
     let d = osmCache[k];
     try {
       if (!d) {
-        d = await overpass('[out:json][timeout:20];nwr(around:1500,' + k + ')[amenity=parking];out center tags;way(around:1000,' + k + ')[natural=coastline];out geom;');
+        d = await overpass(priv
+          ? '[out:json][timeout:25];nwr(' + k + ')[amenity=parking];out center tags;way(' + k + ')[natural=coastline];out geom;'
+          : '[out:json][timeout:20];nwr(around:1500,' + k + ')[amenity=parking];out center tags;way(around:1000,' + k + ')[natural=coastline];out geom;');
         osmCache[k] = d;
       }
     } catch (e) { if ($('#osmbox') === box) box.innerHTML = '<p class="muted">' + T('OpenStreetMap сейчас не отвечает. Откройте место ещё раз позже.') + '</p>'; return; }
@@ -375,8 +383,9 @@
     const els = d.elements || [];
     const parks = els.filter(e => e.tags && e.tags.amenity === 'parking' && !/^(private|no|customers)$/.test(e.tags.access || ''))
       .map(e => { const c = e.center || e; return { lat: c.lat, lon: c.lon, name: e.tags.name || '', fee: e.tags.fee, d: meters(s, c) }; })
-      .filter(p => p.lat != null).sort((a, b) => a.d - b.d).slice(0, 4);
-    const coast = nearestCoast(s, els.filter(e => e.type === 'way' && e.tags && e.tags.natural === 'coastline'));
+      .filter(p => p.lat != null && p.d <= 1500).sort((a, b) => a.d - b.d).slice(0, 4);
+    let coast = nearestCoast(s, els.filter(e => e.type === 'way' && e.tags && e.tags.natural === 'coastline'));
+    if (coast && coast.d > 1000) coast = null;
     // Без своей метки маршрут «до парковки» ведёт к ближайшей парковке OSM, а не к поиску по названию
     if (parks.length) { osmNear[k] = { lat: parks[0].lat, lon: parks[0].lon };
       const a = $('#rt-park'), w = $('#rt-walk'); if (a) a.href = parkRoute(s); if (w) w.href = walkRoute(s); }
@@ -857,6 +866,8 @@
     return T('<header class="top"><h1>Ещё</h1></header>') + langPanel() + licPanel() + T('<div class="panel"><h3>Уведомления</h3>') +
       T('<p>Вечером (после 18:00) приложение напомнит, где завтра лучший шанс. Работает, когда приложение установлено на главный экран.</p>') +
       '<button class="btn ' + (st.notif ? '' : 'pri') + '" data-act="notif">' + (st.notif ? T('Выключить') : T('Включить уведомления')) + '</button></div>' +
+      '<div class="panel"><h3>' + T('Приватность') + '</h3><p>' + T('Журнал, улов, фото, ваши точки, отметки и дом хранятся только в этом телефоне. Приложение ничего не публикует и не собирает статистику.') + '</p><p class="muted">' +
+      T('Вы видите свои точки точно. Наружу для погоды, проверки берега и карты уходит только район вокруг них (несколько км), а точное место считается в телефоне. Точные координаты уходят, только когда вы сами нажимаете маршрут или «Отправить моё место».') + '</p></div>' +
       '<div class="panel"><h3>' + T('Карта без интернета') + '</h3><p>' + T('Скачает карту острова и участки вокруг всех мест (около 500 картинок, 10–15 МБ). Делайте по Wi‑Fi.') + '</p>' +
       (S.tilesAt ? '<p class="muted">' + T('Скачано: ') + new Date(S.tilesAt).toLocaleDateString(LOC) + '</p>' : '') +
       '<div id="tilestat"></div><button class="btn" data-act="tiles">' + (S.tilesAt ? T('Обновить карту') : T('Скачать карту')) + '</button></div>' +
@@ -878,7 +889,7 @@
       '<a target="_blank" rel="noopener" href="https://www.caib.es/sites/reservesmarines/es/regulacian_de_actividades_0/">Ponent</a></li>' +
       T('<li>Координаты 10 точек и описания 20 парковок сверены по описаниям пляжей (mallorcard.es); ограничения Formentor — по DGT 2026. Остальное примерно, проверяйте на месте.</li>') +
       T('<li>Погода: Open-Meteo. Карта: OpenStreetMap.</li><li>Сомнения по заповедникам: 971 176 100.</li></ul></div>') +
-      T('<p class="foot">Рыбалка Майорка · версия 2.16 · данные хранятся только в этом телефоне.</p>');
+      T('<p class="foot">Рыбалка Майорка · версия 2.17 · данные хранятся только в этом телефоне.</p>');
   }
 
   async function doExport() {
@@ -962,6 +973,11 @@
     const box = (n, s, w, e, z) => { for (let x = tx(w, z); x <= tx(e, z); x++) for (let y = ty(n, z); y <= ty(s, z); y++) add(z, x, y); };
     for (let z = 8; z <= 11; z++) box(40.0, 39.25, 2.3, 3.5, z);          // весь остров
     allSpots().filter(s => s.lat != null).forEach(s => {                   // ~1 км вокруг каждого места
+      if (isPrivate(s)) {                                                   // личные точки: весь район вокруг, чтобы не выдать точное место
+        const a = privArea(s);
+        for (let z = 12; z <= 15; z++) box(a.la + 0.025, a.la - 0.025, a.lo - 0.03, a.lo + 0.03, z);
+        return;
+      }
       for (let z = 12; z <= 15; z++) box(s.lat + 0.009, s.lat - 0.009, s.lon - 0.012, s.lon + 0.012, z);
     });
     return [...set.values()];

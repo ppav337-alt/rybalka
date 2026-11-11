@@ -602,8 +602,10 @@
     return F.map((f,k)=>one(f, M[k]));
   }
 
+  // Свои точки (priv) уходят в сервис погоды только примерно: с шагом 0,02° (около 2 км)
+  const blur = v => (Math.round(v / 0.02) * 0.02).toFixed(2);
   function weatherUrls(spots) {
-    const lat = spots.map(s=>s.lat.toFixed(3)).join(','), lon = spots.map(s=>s.lon.toFixed(3)).join(',');
+    const lat = spots.map(s=>s.priv ? blur(s.lat) : s.lat.toFixed(3)).join(','), lon = spots.map(s=>s.priv ? blur(s.lon) : s.lon.toFixed(3)).join(',');
     return {
       fc: 'https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+
         '&hourly=temperature_2m,wind_speed_10m,wind_gusts_10m,wind_direction_10m,pressure_msl,cloud_cover,precipitation'+
