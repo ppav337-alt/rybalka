@@ -49,7 +49,7 @@
     edits: store.get('edits', {}),            // правки координат встроенных точек
     hidden: store.get('hidden', []),
     journal: store.get('journal', []),
-    settings: store.get('settings', { home: { lat: 39.7646, lon: 3.1541, name: 'Can Picafort' }, filter: 'all', notif: false }),
+    settings: store.get('settings', { home: { lat: 39.5696, lon: 2.6502, name: 'Palma' }, filter: 'all', notif: false }),
     parks: store.get('parks', {}),
     lic: store.get('lic', null),            // лицензия {num, until, holder, p1, p2}          // свои отметки парковки {id:{lat,lon}}
     marks: store.get('marks', []),          // мои отметки на карте {id,lat,lon,kind,note,date}
@@ -67,7 +67,9 @@
     return base.concat(S.custom).filter(s => !S.hidden.includes(s.id));
   }
   const spotById = id => allSpots().find(s => s.id === id) || C.SPOTS.find(s => s.id === id) || S.custom.find(s => s.id === id);
-  const weatherSpots = () => allSpots().filter(s => s.lat != null && s.lon != null && !s.noFish);
+  // Личные точки: свои и встроенные, которые вы уточнили на карте. Их точные координаты не уходят в интернет
+  const isPrivate = s => s.src === 'mine' || !!(S.edits[s.id] && S.edits[s.id].lat != null);
+  const weatherSpots = () => allSpots().filter(s => s.lat != null && s.lon != null && !s.noFish).map(s => isPrivate(s) ? Object.assign({}, s, { priv: true }) : s);
 
   function wxFor(id) {
     if (!S.wx) return null;
@@ -131,7 +133,6 @@
     : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(s.q || s.name);
   const searchLink = s => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(s.q || s.name);
 
-  if (S.settings.home && S.settings.home.name === 'Santa Margalida') { S.settings.home = { lat: 39.7646, lon: 3.1541, name: 'Can Picafort' }; store.set('settings', S.settings); }
 
   // ---------- Погода ----------
   async function loadWeather(force) {
@@ -360,8 +361,13 @@
     } });
     return best;
   }
-  async function osmCheck(s) {
+  async function osmCheck(s, asked) {
     const box = $('#osmbox'); if (!box || s.lat == null) return;
+    if (isPrivate(s) && !asked) {
+      box.innerHTML = '<h3>' + T('Проверка по OpenStreetMap') + '</h3><p class="muted">' + T('Это ваша личная точка, поэтому её координаты сами никуда не отправляются. Проверка берега и парковок отправит их в OpenStreetMap.') + '</p>' +
+        '<div class="btns"><button class="btn" data-act="osmask" data-spot="' + esc(s.id) + '">' + T('Проверить по OpenStreetMap') + '</button></div>';
+      return;
+    }
     const k = s.lat + ',' + s.lon;
     box.innerHTML = '<p class="muted">' + T('Ищу парковки и берег по OpenStreetMap…') + '</p>';
     let d = osmCache[k];
@@ -857,6 +863,8 @@
     return T('<header class="top"><h1>Ещё</h1></header>') + langPanel() + licPanel() + T('<div class="panel"><h3>Уведомления</h3>') +
       T('<p>Вечером (после 18:00) приложение напомнит, где завтра лучший шанс. Работает, когда приложение установлено на главный экран.</p>') +
       '<button class="btn ' + (st.notif ? '' : 'pri') + '" data-act="notif">' + (st.notif ? T('Выключить') : T('Включить уведомления')) + '</button></div>' +
+      '<div class="panel"><h3>' + T('Приватность') + '</h3><p>' + T('Журнал, улов, фото, ваши точки, отметки и дом хранятся только в этом телефоне. Приложение ничего не публикует и не собирает статистику.') + '</p><p class="muted">' +
+      T('Для прогноза ваши точки отправляются в сервис погоды только примерно (около 2 км). Точные координаты уходят только когда вы сами нажимаете маршрут, «Отправить моё место» или проверку по OpenStreetMap.') + '</p></div>' +
       '<div class="panel"><h3>' + T('Карта без интернета') + '</h3><p>' + T('Скачает карту острова и участки вокруг всех мест (около 500 картинок, 10–15 МБ). Делайте по Wi‑Fi.') + '</p>' +
       (S.tilesAt ? '<p class="muted">' + T('Скачано: ') + new Date(S.tilesAt).toLocaleDateString(LOC) + '</p>' : '') +
       '<div id="tilestat"></div><button class="btn" data-act="tiles">' + (S.tilesAt ? T('Обновить карту') : T('Скачать карту')) + '</button></div>' +
@@ -878,7 +886,7 @@
       '<a target="_blank" rel="noopener" href="https://www.caib.es/sites/reservesmarines/es/regulacian_de_actividades_0/">Ponent</a></li>' +
       T('<li>Координаты 10 точек и описания 20 парковок сверены по описаниям пляжей (mallorcard.es); ограничения Formentor — по DGT 2026. Остальное примерно, проверяйте на месте.</li>') +
       T('<li>Погода: Open-Meteo. Карта: OpenStreetMap.</li><li>Сомнения по заповедникам: 971 176 100.</li></ul></div>') +
-      T('<p class="foot">Рыбалка Майорка · версия 2.16 · данные хранятся только в этом телефоне.</p>');
+      T('<p class="foot">Рыбалка Майорка · версия 2.17 · данные хранятся только в этом телефоне.</p>');
   }
 
   async function doExport() {
@@ -962,6 +970,11 @@
     const box = (n, s, w, e, z) => { for (let x = tx(w, z); x <= tx(e, z); x++) for (let y = ty(n, z); y <= ty(s, z); y++) add(z, x, y); };
     for (let z = 8; z <= 11; z++) box(40.0, 39.25, 2.3, 3.5, z);          // весь остров
     allSpots().filter(s => s.lat != null).forEach(s => {                   // ~1 км вокруг каждого места
+      if (isPrivate(s)) {                                                   // личные точки: только примерный район, без точного места
+        const la = Math.round(s.lat / 0.02) * 0.02, lo = Math.round(s.lon / 0.02) * 0.02;
+        for (let z = 12; z <= 14; z++) box(la + 0.02, la - 0.02, lo - 0.025, lo + 0.025, z);
+        return;
+      }
       for (let z = 12; z <= 15; z++) box(s.lat + 0.009, s.lat - 0.009, s.lon - 0.012, s.lon + 0.012, z);
     });
     return [...set.values()];
@@ -1024,6 +1037,7 @@
       case 'togglef': S.showF = !S.showF; render(); break;
       case 'togglefish': S.showFish = !S.showFish; render(); break;
       case 'tiles': downloadTiles(t); break;
+      case 'osmask': osmCheck(spotById(id), true); break;
       case 'pack': packView(id); break;
       case 'packreset': S.pack = { day: C.ymd(new Date()), done: [] }; store.set('pack', S.pack); document.querySelectorAll('[data-pack]').forEach(c => c.checked = false); break;
       case 'share': shareLoc(); break;

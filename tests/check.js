@@ -131,6 +131,13 @@ check('краба не советуем ночью', () => {
   const r = C.rigNow(s, wx, night, null, null); ok(!r.fish || r.fish.id !== 'cangrejo', 'ночью предложен краб');
 });
 
+console.log('Приватность');
+check('личные точки уходят в погоду только примерно', () => {
+  const u = C.weatherUrls([{ lat: 39.123456, lon: 3.098765, priv: true }, { lat: 39.5, lon: 2.6 }]).fc;
+  ok(!u.includes('39.123') && !u.includes('3.099') && u.includes('39.12') && u.includes('3.10'), u.slice(0, 140));
+});
+check('в коде нет личного адреса дома', () => ok(!/39\.7646|3\.1541/.test(read('app.js')), 'координаты дома в app.js'));
+
 console.log('Переводы');
 const D = R.__D;
 check('у каждой фразы 3 перевода (en, ro, es)', () => {
