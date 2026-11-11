@@ -127,11 +127,15 @@
     const spots = weatherSpots(), ids = spots.map(s => s.id).join('|');
     const fresh = S.wx && (Date.now() - S.wx.at < 60 * 60 * 1000) && S.wx.ids.join('|') === ids;
     if (fresh && !force) return;
+    // Без сети не ждём: сразу показываем сохранённый прогноз
+    if (navigator.onLine === false && S.wx) { S.err = T('Без интернета: показан сохранённый прогноз от ') + new Date(S.wx.at).toLocaleString(LOC, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + '.'; render(); return; }
     S.loading = true; S.err = null; render();
     try {
       const u = C.weatherUrls(spots);
-      const [fc, mar] = await Promise.all([fetch(u.fc).then(r => { if (!r.ok) throw new Error(T('погода ') + r.status); return r.json(); }),
-        fetch(u.mar).then(r => r.ok ? r.json() : Promise.reject()).catch(() => fetch(u.mar2).then(r => r.ok ? r.json() : null)).catch(() => null)]);
+      // Слабая связь: не ждём ответа дольше 15 с
+      const get = url => { const ac = new AbortController(), tm = setTimeout(() => ac.abort(), 15000); return fetch(url, { signal: ac.signal }).finally(() => clearTimeout(tm)); };
+      const [fc, mar] = await Promise.all([get(u.fc).then(r => { if (!r.ok) throw new Error(T('погода ') + r.status); return r.json(); }),
+        get(u.mar).then(r => r.ok ? r.json() : Promise.reject()).catch(() => get(u.mar2).then(r => r.ok ? r.json() : null)).catch(() => null)]);
       const data = C.parseWeather(fc, mar || (Array.isArray(fc) ? fc.map(() => ({})) : {}));
       S.wx = { at: Date.now(), ids: spots.map(s => s.id), data };
       store.set('wx', S.wx);
@@ -150,10 +154,13 @@
   }
   function ranking(off) {
     const key = dayKey(off), P = pers(), home = S.settings.home;
-    const sc = x => x.b && !x.b.closed ? x.b.score : -1;
+    const sc = x => x.b && !x.b.closed ? x.b.raw : -1;
     return weatherSpots().map(s => {
       const wx = wxFor(s.id); if (!wx) return { s, b: null };
-      return { s, b: C.bestWindow(s, wx, key, off === 0 ? Date.now() : 0, curTech(), P), wx };
+      const b = C.bestWindow(s, wx, key, off === 0 ? Date.now() : 0, curTech(), P);
+      // Дорога тоже важна: минус 1 балл за каждые 8 км от дома. При одинаковой погоде ближнее место выше.
+      if (b && !b.closed) { const d = km(home, s); b.raw -= d / 8; b.score = C.cap(b.raw); if (d <= 15) b.why = b.why.concat(T('рядом с домом')); }
+      return { s, b, wx };
     }).sort((a, b) => (sc(b) - sc(a)) || (km(home, a.s) - km(home, b.s)));
   }
 
@@ -217,9 +224,11 @@
         (b.tags.length ? '<div class="tags">' + b.tags.slice(0, 3).map(x => '<span class="' + tagTone(x) + '">' + tagIcon(x) + esc(x) + '</span>').join('') + '</div>' : '') +
         (b.danger ? T('<div class="danger">⚠ Опасно на скалах: волна или порывы</div>') : '');
       const hero = !heroDone && b.score >= 50; heroDone = true;
-      h += card(s, ring(b.score), info, dist, (S.day ? '<small>' + [T('сегодня'), T('завтра'), T('послезавтра')][S.day] + '</small> ' : '') + hhmm(t) + '–' + addH(t, 2), hero);
+      const why = hero && b.why && b.why.length ? '<div class="why"><b>' + T('Почему здесь:') + '</b> ' + b.why.slice(0, 3).map(esc).join(', ') + '</div>' : '';
+      const qadd = '<span class="qadd" role="button" data-act="addcatch" data-spot="' + esc(s.id) + '">＋ ' + T('Записать улов') + '</span>';
+      h += card(s, ring(b.score), why + info + qadd, dist, (S.day ? '<small>' + [T('сегодня'), T('завтра'), T('послезавтра')][S.day] + '</small> ' : '') + hhmm(t) + '–' + addH(t, 2), hero);
     });
-    h += T('</div><p class="foot">Оценка 0–100 по ветру, волне, давлению, времени суток, луне и мутности. Это подсказка, а не гарантия клёва.</p>');
+    h += T('</div><p class="foot">Оценка 0–100 по ветру, волне, давлению, времени суток, луне и мутности. Это подсказка, а не гарантия клёва.</p>') + '<p class="foot">' + T('В списке из оценки вычтен 1 балл за каждые 8 км от дома, поэтому при одинаковой погоде ближнее место стоит выше.') + '</p>';
     return h;
   }
   function card(s, badge, info, dist, win, hero) {
@@ -643,6 +652,14 @@
       T('<label>Заметка<textarea name="note" rows="2"></textarea></label><div id="cverdict"></div>') +
       T('<button class="btn pri wide">Сохранить</button></form>'));
     const form = $('#catchform');
+    const TECH_METHOD = { surf: 1, spin: 4, squid: 5 }; // номер пункта в списке «Способ»
+    if (TECH_METHOD[curTech()]) form.method.selectedIndex = TECH_METHOD[curTech()];
+    // Без выбранной точки подставляем ближайшую к телефону (если она в пределах 3 км)
+    if (!spotId && navigator.geolocation) navigator.geolocation.getCurrentPosition(p => {
+      const me = { lat: p.coords.latitude, lon: p.coords.longitude };
+      const near = spots.filter(x => x.lat != null).map(x => ({ x, d: meters(me, x) })).sort((a, b) => a.d - b.d)[0];
+      if (near && near.d <= 3000 && document.body.contains(form)) { form.spot.value = near.x.id; upd(); toast(T('Точка выбрана по GPS: ') + near.x.name); }
+    }, () => { }, { enableHighAccuracy: true, timeout: 8000, maximumAge: 120000 });
     const upd = () => {
       const fd = new FormData(form), fid = fd.get('fish');
       if (!fid || fid === 'other') { $('#cverdict').innerHTML = ''; return; }
@@ -800,7 +817,7 @@
       '<a target="_blank" rel="noopener" href="https://www.caib.es/sites/reservesmarines/es/regulacian_de_actividades_0/">Ponent</a></li>' +
       T('<li>Координаты 10 точек и описания 20 парковок сверены по описаниям пляжей (mallorcard.es); ограничения Formentor — по DGT 2026. Остальное примерно, проверяйте на месте.</li>') +
       T('<li>Погода: Open-Meteo. Карта: OpenStreetMap.</li><li>Сомнения по заповедникам: 971 176 100.</li></ul></div>') +
-      T('<p class="foot">Рыбалка Майорка · версия 2.13 · данные хранятся только в этом телефоне.</p>');
+      T('<p class="foot">Рыбалка Майорка · версия 2.14 · данные хранятся только в этом телефоне.</p>');
   }
 
   async function doExport() {
@@ -949,4 +966,6 @@
   }
   render();
   loadWeather(false);
+  // Связь вернулась: обновляем прогноз
+  window.addEventListener('online', () => loadWeather(true));
 })();

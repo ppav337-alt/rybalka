@@ -355,27 +355,31 @@
     lampuga:[8,9,10,11,12], raor:[9,10,11], calamar:[10,11,12,1,2], pulpo:[3,4,5,9,10], erizo:[12,1,2,3], cangrejo:[6,7,8,9,10],
     oblada:[4,5,6,7,8,9,10], mabre:[5,6,7,8,9,10], lecha:[6,7,8,9,10,11], anjova:[9,10,11] };
 
+  // Выше 85 оценка растёт плавно: так лучшие места не слипаются на 100
+  function cap(s) { return Math.max(0, Math.min(100, Math.round(s <= 85 ? s : 85 + 15 * (1 - Math.exp(-(s - 85) / 20))))); }
+
   function hourScore(spot, wx, i, tech, pers) {
     const date = new Date(wx.t[i]);
     const dk = wx.t[i].slice(0,10), dIdx = wx.days.indexOf(dk);
     const sun = dIdx>=0 ? { sr:new Date(wx.sunrise[dIdx]).getTime(), ss:new Date(wx.sunset[dIdx]).getTime() } : null;
     const L = legal(spot, date, tech, sun);
-    const r = { score:0, legal:L, tags:[], danger:false };
+    const r = { score:0, raw:0, legal:L, tags:[], danger:false, why:[] };
     if (!L.ok) return r;
     let s = 40;
+    const up = (p, l) => { s += p; if (l) r.why.push([p, l]); };
     const wave = wx.wave[i], wind = wx.wind[i], gust = wx.gust[i], dir = wx.dir[i];
     const rock = spot.type==='rock';
     // Волна
     if (wave!=null) {
-      if (!rock) { if (wave<0.3) s+=0; else if (wave<=1.0) s+=15; else if (wave<=1.5) s+=3; else if (wave<=2) { s-=20; r.tags.push(T('сильный прибой')); } else { s-=40; r.danger=true; } }
-      else { if (wave<=1.0) s+=10; else if (wave<=1.5) s-=10; else { s-=40; r.danger=true; } }
+      if (!rock) { if (wave<0.3) s+=0; else if (wave<=1.0) up(15, T('волна ')+wave.toFixed(1)+T(' м — в самый раз')); else if (wave<=1.5) s+=3; else if (wave<=2) { s-=20; r.tags.push(T('сильный прибой')); } else { s-=40; r.danger=true; } }
+      else { if (wave<=1.0) up(10, T('спокойное море у скал')); else if (wave<=1.5) s-=10; else { s-=40; r.danger=true; } }
     }
     // Ветер
     if (wind!=null) {
       if (wind<10) s+=5; else if (wind<=20) s+=5; else if (wind<=30) s-=10; else s-=25;
       const onshore = angDiff(dir, spot.face) < 60;   // ветер дует с моря на берег
       const offshore = angDiff(dir, spot.face) > 120;
-      if (onshore && wind>=5 && wind<=20 && !rock) { s+=5; r.tags.push(T('лёгкий ветер с моря')); }
+      if (onshore && wind>=5 && wind<=20 && !rock) { up(5, T('лёгкий ветер с моря')); r.tags.push(T('лёгкий ветер с моря')); }
       if (onshore && wind>25 && rock) { s-=15; r.danger=true; }
       if (offshore && wind>25) { s-=5; r.tags.push(T('сильный отжим')); }
     }
@@ -383,7 +387,7 @@
     // Давление: тренд за 3 часа
     if (i>=3 && wx.press[i]!=null && wx.press[i-3]!=null) {
       const dp = wx.press[i]-wx.press[i-3];
-      if (dp<=-0.5 && dp>=-2) { s+=8; r.tags.push(T('давление плавно падает')); }
+      if (dp<=-0.5 && dp>=-2) { up(8, T('давление плавно падает')); r.tags.push(T('давление плавно падает')); }
       else if (Math.abs(dp)<0.5) s+=5;
       else if (dp>1.5) { s-=8; r.tags.push(T('давление резко растёт')); }
       else if (dp<-2) { s-=5; r.tags.push(T('давление резко падает')); }
@@ -394,7 +398,7 @@
     if (di>=0) {
       const sr = new Date(wx.sunrise[di]).getTime(), ss = new Date(wx.sunset[di]).getTime();
       const near = Math.min(Math.abs(t-sr), Math.abs(t-ss))/3600000;
-      if (near<=1.5) { s+=15; r.tags.push(Math.abs(t-sr)<Math.abs(t-ss)?T('рассвет'):T('закат')); }
+      if (near<=1.5) { const tw = Math.abs(t-sr)<Math.abs(t-ss)?T('рассвет'):T('закат'); up(15, tw); r.tags.push(tw); }
       const night = t<sr-3600000 || t>ss+3600000;
       if (night && (!rock || spot.depth!=='shallow')) s+=5;
       const m=date.getMonth()+1, h=date.getHours();
@@ -404,33 +408,34 @@
     if ((wx.rain[i]||0)>2) { s-=10; r.tags.push(T('ливень')); }
     // Мутность после шторма
     let maxW=0; for (let k=Math.max(0,i-24);k<i;k++) if (wx.wave[k]!=null) maxW=Math.max(maxW,wx.wave[k]);
-    if (maxW>1.5 && wave!=null && wave<1.2) { if (!rock) { s+=8; r.tags.push(T('мутная вода: шанс на сибаса')); } else { s-=5; r.tags.push(T('мутная вода')); } }
+    if (maxW>1.5 && wave!=null && wave<1.2) { if (!rock) { up(8, T('мутная вода: шанс на сибаса')); r.tags.push(T('мутная вода: шанс на сибаса')); } else { s-=5; r.tags.push(T('мутная вода')); } }
     // Вода
     const sst = wx.sst[i];
     if (sst!=null) { if (sst<14) s-=5; else if (sst>=16 && sst<=24) s+=3; }
     // Луна
-    const mp = moonPhase(date); if (mp<0.1||mp>0.9||Math.abs(mp-0.5)<0.1) s+=5;
+    const mp = moonPhase(date); if (mp<0.1||mp>0.9||Math.abs(mp-0.5)<0.1) up(5, T('новолуние или полнолуние'));
     // Солунар
     const sl = inSol(solunar(wx.t[i].slice(0,10), spot.lat, spot.lon), date.getTime());
-    if (sl===2) { s+=6; r.tags.push(T('солунар: главный период')); } else if (sl===1) { s+=3; r.tags.push(T('солунар: малый период')); }
+    if (sl===2) { up(6, T('солунар: главный период')); r.tags.push(T('солунар: главный период')); } else if (sl===1) { up(3, T('солунар: малый период')); r.tags.push(T('солунар: малый период')); }
     // Длинная зыбь опасна на скалах
     const wper = wx.wper ? wx.wper[i] : null;
     if (rock && wave!=null && wave>=1.0 && wper!=null && wper>=8) { r.danger=true; s-=10; r.tags.push(T('длинная зыбь')); }
     // Резкое похолодание воды за 2 дня
     if (sst!=null) { let mx=sst; for (let k=Math.max(0,i-48);k<i;k++) if (wx.sst[k]!=null) mx=Math.max(mx,wx.sst[k]); if (mx-sst>=2) { s-=6; r.tags.push(T('вода холодает')); } }
     // Ваши удачные часы по журналу
-    if (pers && pers.hours && pers.hours.has(date.getHours())) { s+=4; r.tags.push(T('ваши часы')); }
+    if (pers && pers.hours && pers.hours.has(date.getHours())) { up(4, T('ваши часы')); r.tags.push(T('ваши часы')); }
     // Поправки под технику
     if (tech && sun) {
       const t2=date.getTime(), m2=date.getMonth()+1, dusk=Math.abs(t2-sun.ss)/3600000, dark=t2>sun.ss&&t2<sun.ss+3*3600000;
-      if (tech==='squid') { if (dark||dusk<=1) { s+=10; r.tags.push(T('время кальмара')); } if (wave!=null&&wave>0.8) s-=10; if (!(m2>=10||m2<=2)) s-=10; }
+      if (tech==='squid') { if (dark||dusk<=1) { up(10, T('время кальмара')); r.tags.push(T('время кальмара')); } if (wave!=null&&wave>0.8) s-=10; if (!(m2>=10||m2<=2)) s-=10; }
       if (tech==='spin') { if (Math.abs(t2-sun.sr)/3600000<=1.5) s+=5; if (wind!=null && wind>25) s-=5; }
       if (tech==='rock') { if (wave!=null && wave>1.0) s-=10; }
       if (tech==='surf') { if (wave!=null && wave>=0.3 && wave<=1.0) s+=5; }
       if (tech==='crab') { s = 40 + (wave!=null && wave<0.5 ? 20 : 0) + ((wx.sst[i]||0)>=20 ? 20 : (wx.sst[i]||0)>=17 ? 10 : -10) + (wind!=null && wind<15 ? 10 : 0); r.tags=[]; if ((wx.sst[i]||0)>=20) r.tags.push(T('тёплая вода — краб активен')); }
     }
     if (L.unsure) r.tags.push(T('правила не подтверждены'));
-    r.score = Math.max(0, Math.min(100, Math.round(s)));
+    r.raw = s;
+    r.score = cap(s);
     return r;
   }
 
@@ -442,8 +447,11 @@
       if (fromMs && new Date(wx.t[i]).getTime() < fromMs - 3600000) continue;
       const a=hourScore(spot,wx,i,tech,pers), b=hourScore(spot,wx,i+1,tech,pers);
       if (!a.legal.ok || !b.legal.ok) continue;
-      const avg=(a.score+b.score)/2;
-      if (!best || avg>best.score) best={ score:Math.round(avg), i, tags:[...new Set([...a.tags,...b.tags])], danger:a.danger||b.danger, unsure:a.legal.unsure };
+      const avg=(a.score+b.score)/2, raw=(a.raw+b.raw)/2;
+      if (!best || raw>best.raw) {
+        const why={}; [...a.why,...b.why].forEach(([p,l]) => { why[l]=Math.max(why[l]||0,p); });
+        best={ score:Math.round(avg), raw, i, tags:[...new Set([...a.tags,...b.tags])], why:Object.entries(why).sort((x,y)=>y[1]-x[1]).map(x=>x[0]), danger:a.danger||b.danger, unsure:a.legal.unsure };
+      }
     }
     if (!best) {
       const i = wx.t.findIndex(x=>x.slice(0,10)===dayKey);
@@ -513,5 +521,5 @@
   SPOTS.forEach(sp => { sp.tech = SPOT_TECH[sp.id] || []; sp.parkQ = PARK_Q[sp.id] || ''; sp.parkPt = PARK_PT[sp.id] || null; });
 
   root.FishCore = { RESERVES, SPOTS, FISH, TALLAS_URL, RULES_URL, legal, fishOpen, checkCatch, moonPhase, moonName,
-    hourScore, bestWindow, tackle, TECH, solunar, inSol, sinker, BEST, parseWeather, weatherUrls, isHoliday, ymd, DOW, angDiff };
+    hourScore, bestWindow, cap, tackle, TECH, solunar, inSol, sinker, BEST, parseWeather, weatherUrls, isHoliday, ymd, DOW, angDiff };
 })(typeof self !== 'undefined' ? self : this);

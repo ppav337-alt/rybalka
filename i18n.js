@@ -5,6 +5,16 @@
   try { lang = root.localStorage && root.localStorage.getItem('ryb_lang') || 'ru'; } catch (e) {}
   if (!LANGS[lang]) lang = 'ru';
   var D = {
+"рядом с домом": ["close to home", "aproape de casă", "cerca de casa"],
+"В списке из оценки вычтен 1 балл за каждые 8 км от дома, поэтому при одинаковой погоде ближнее место стоит выше.": ["In this list 1 point is taken off for every 8 km from home, so with the same weather the closer spot ranks higher.", "În listă se scade 1 punct pentru fiecare 8 km de casă, așa că la aceeași vreme locul mai apropiat e mai sus.", "En la lista se resta 1 punto por cada 8 km desde casa, así que con el mismo tiempo el lugar más cercano queda más arriba."],
+"Почему здесь:": ["Why here:", "De ce aici:", "Por qué aquí:"],
+"Записать улов": ["Log a catch", "Notează captura", "Anotar captura"],
+"Точка выбрана по GPS: ": ["Spot picked by GPS: ", "Loc ales după GPS: ", "Punto elegido por GPS: "],
+"волна ": ["waves ", "valuri ", "olas "],
+" м — в самый раз": [" m, just right", " m, exact cât trebuie", " m, justo lo ideal"],
+"спокойное море у скал": ["calm sea at the rocks", "mare calmă la stânci", "mar tranquilo en las rocas"],
+"новолуние или полнолуние": ["new or full moon", "lună nouă sau plină", "luna nueva o llena"],
+"Без интернета: показан сохранённый прогноз от ": ["Offline: showing the saved forecast from ", "Fără internet: se arată prognoza salvată din ", "Sin internet: se muestra el pronóstico guardado del "],
 "Не проверено": ["Not verified", "Neverificat", "Sin verificar"],
 "Точка не проверена: прежние координаты стояли на склоне, не у воды. Место ловли и парковку уточняем на месте.": ["Spot not verified: the old coordinates were on a hillside, not at the water. Fishing spot and parking to be checked on site.", "Loc neverificat: coordonatele vechi erau pe un deal, nu la apă. Locul de pescuit și parcarea se verifică la fața locului.", "Lugar sin verificar: las coordenadas anteriores estaban en una ladera, no junto al agua. El lugar y el aparcamiento se comprobarán in situ."],
 "Ищу парковки и берег по OpenStreetMap…": ["Looking up parkings and shoreline in OpenStreetMap…", "Caut parcări și țărm în OpenStreetMap…", "Buscando aparcamientos y costa en OpenStreetMap…"],
@@ -2796,7 +2806,7 @@
 "Резерват s'Albufereta: ловля запрещена везде, кроме пляжей и морского берега. В лагуне и каналах нельзя (правила резервата, caib.es).": ["s'Albufereta reserve: fishing is banned everywhere except the beaches and the sea shore. Not in the lagoon or canals (reserve rules, caib.es).", "Rezervația s'Albufereta: pescuitul e interzis peste tot, cu excepția plajelor și a țărmului mării. Nu în lagună sau canale (regulile rezervației, caib.es).", "Reserva de s'Albufereta: pesca prohibida en todo el espacio, salvo en las playas y la ribera del mar. No en la laguna ni en los canales (normas de la reserva, caib.es)."],
 "<p class=\"foot\">Рыбалка Майорка · версия 2.8 · данные хранятся только в этом телефоне.</p>": ["<p class=\"foot\">Mallorca Fishing · version 2.8 · data is stored only on this phone.</p>", "<p class=\"foot\">Pescuit Mallorca · versiunea 2.8 · datele sunt stocate doar pe acest telefon.</p>", "<p class=\"foot\">Pesca Mallorca · versión 2.8 · los datos se guardan solo en este teléfono.</p>"],
 "У пляжа вдоль Ma-2220, не в резервате. Точку уточняем": ["By the beach along the Ma-2220, outside the reserve. Exact point pending", "Lângă plajă de-a lungul Ma-2220, nu în rezervație. Punctul se verifică", "Junto a la playa por la Ma-2220, fuera de la reserva. Punto por confirmar"],
-"<p class=\"foot\">Рыбалка Майорка · версия 2.13 · данные хранятся только в этом телефоне.</p>": ["<p class=\"foot\">Mallorca Fishing · version 2.13 · data is stored only on this phone.</p>", "<p class=\"foot\">Pescuit Mallorca · versiunea 2.13 · datele sunt stocate doar pe acest telefon.</p>", "<p class=\"foot\">Pesca Mallorca · versión 2.13 · los datos se guardan solo en este teléfono.</p>"]
+"<p class=\"foot\">Рыбалка Майорка · версия 2.14 · данные хранятся только в этом телефоне.</p>": ["<p class=\"foot\">Mallorca Fishing · version 2.14 · data is stored only on this phone.</p>", "<p class=\"foot\">Pescuit Mallorca · versiunea 2.14 · datele sunt stocate doar pe acest telefon.</p>", "<p class=\"foot\">Pesca Mallorca · versión 2.14 · los datos se guardan solo en este teléfono.</p>"]
 };
   var I = {
     LANGS: LANGS,

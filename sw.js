@@ -1,5 +1,5 @@
 /* Рыбалка Майорка — офлайн и вечерние уведомления */
-const VERSION = 'ryb-v24';
+const VERSION = 'ryb-v25';
 const SHELL = ['./', 'index.html', 'core.js', 'app.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png',
   'lib/leaflet.css',
   'lib/leaflet.js', 'i18n.js'];
@@ -26,11 +26,17 @@ self.addEventListener('fetch', e => {
     }));
     return;
   }
-  // Оболочка приложения: сеть, при отсутствии — кэш
-  e.respondWith(fetch(e.request).then(r => {
-    if (r.ok && (url.origin === location.origin)) { const cp = r.clone(); caches.open(VERSION).then(c => c.put(e.request, cp)); }
-    return r;
-  }).catch(() => caches.match(e.request).then(r => r || caches.match('index.html'))));
+  // Оболочка приложения: сеть, при отсутствии — кэш.
+  // При слабой связи (на скалах) не ждём сеть дольше 4 с, если есть сохранённая копия.
+  e.respondWith((async () => {
+    const cached = () => caches.match(e.request, { ignoreSearch: true }).then(r => r || caches.match('index.html'));
+    const net = fetch(e.request).then(r => {
+      if (r.ok && (url.origin === location.origin)) { const cp = r.clone(); caches.open(VERSION).then(c => c.put(e.request, cp)); }
+      return r;
+    });
+    const slow = new Promise(res => setTimeout(() => cached().then(r => { if (r) res(r); }), 4000));
+    try { return await Promise.race([net, slow]); } catch (err) { return (await cached()) || Response.error(); }
+  })());
 });
 
 // Вечернее уведомление о лучшем месте на завтра (Chrome Android, установленное приложение)
