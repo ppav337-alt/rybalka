@@ -55,6 +55,7 @@
     marks: store.get('marks', []),          // мои отметки на карте {id,lat,lon,kind,note,date}
     pack: store.get('pack', {}),            // сборы {day, done:[]}
     showF: false,
+    showFish: false,
     fishView: 'fish',
     wx: store.get('wx', null),                // { at, ids:[], data:[...] }
     loading: false, err: null
@@ -91,7 +92,7 @@
   const metric = (icon, val, sub, pre) => '<div class="m"><i>' + icon + '</i><div><b>' + val + '</b><span>' + (pre || '') + (pre ? ' ' : '') + esc(sub) + '</span></div></div>';
   const waveWord = w => w < 0.3 ? T('штиль') : w < 0.8 ? T('слабая') : w < 1.5 ? T('умеренная') : T('сильная');
   const waterWord = t => t >= 22 ? T('тёплая') : t >= 18 ? T('комфортная') : T('прохладная');
-  const GOOD_TAGS = ['давление плавно падает', 'рассвет', 'закат', 'лёгкий ветер с моря', 'мутная вода: шанс на сибаса', 'время кальмара', 'тёплая вода — краб активен', 'солунар: главный период', 'солунар: малый период', 'ваши часы'].map(x => T(x));
+  const GOOD_TAGS = ['как в ваш удачный выход', 'давление плавно падает', 'рассвет', 'закат', 'лёгкий ветер с моря', 'мутная вода: шанс на сибаса', 'время кальмара', 'тёплая вода — краб активен', 'солунар: главный период', 'солунар: малый период', 'ваши часы'].map(x => T(x));
   const TI = {
     leaf: '<path d="M5 19c0-8 5-13 14-14-1 9-6 14-14 14zM5 19l7-7"/>',
     down: '<path d="M4 7l6 6 3-3 7 7M20 11v6h-6"/>', up: '<path d="M4 17l6-6 3 3 7-7M20 13V7h-6"/>',
@@ -102,7 +103,7 @@
   };
   const tagIcon = x => {
     const k = x === T('лёгкий ветер с моря') ? 'leaf' : x === T('давление плавно падает') || x === T('давление резко падает') ? 'down' : x === T('давление резко растёт') ? 'up' :
-      x === T('рассвет') || x === T('закат') ? 'sun' : x.indexOf(T('солунар')) === 0 ? 'moon' : x === T('ваши часы') ? 'star' : x.indexOf(T('мутная вода')) === 0 || x === T('ливень') ? 'drop' : x === T('время кальмара') ? 'moon' :
+      x === T('рассвет') || x === T('закат') ? 'sun' : x.indexOf(T('солунар')) === 0 ? 'moon' : x === T('ваши часы') || x === T('как в ваш удачный выход') ? 'star' : x.indexOf(T('мутная вода')) === 0 || x === T('ливень') ? 'drop' : x === T('время кальмара') ? 'moon' :
       x === T('правила не подтверждены') ? 'info' : GOOD_TAGS.includes(x) ? 'leaf' : 'warn';
     return '<svg viewBox="0 0 24 24">' + TI[k] + '</svg>';
   };
@@ -148,9 +149,16 @@
 
   // ---------- Рейтинг ----------
   // Удачные часы по журналу: час, в который было 2+ улова
+  // Условия выхода: из сохранённых чисел, а для старых записей из текста погоды
+  function condOf(e) {
+    if (e.cond) return e.cond;
+    const w = String(e.wx || ''), wind = w.match(/(\d+)/), wave = w.match(/(\d+\.\d)/);
+    return { wind: wind ? +wind[1] : null, wave: wave ? +wave[1] : null, dir: null };
+  }
   function pers() {
+    const like = S.journal.filter(j => j.fish && j.time).map(j => Object.assign({ spot: j.spot, fish: j.fish, hour: +j.time.slice(11, 13) }, condOf(j)));
     const c = {}; S.journal.filter(j => j.fish).forEach(j => { const h = +(j.time || '').slice(11, 13); if (!isNaN(h)) c[h] = (c[h] || 0) + 1; });
-    return { hours: new Set(Object.keys(c).filter(h => c[h] >= 2).map(Number)) };
+    return { hours: new Set(Object.keys(c).filter(h => c[h] >= 2).map(Number)), fish: S.settings.fish || null, like };
   }
   function ranking(off) {
     const key = dayKey(off), P = pers(), home = S.settings.home;
@@ -178,10 +186,18 @@
 
   function filterSpots(list) {
     const f = S.settings.filter, t = curTech();
-    return list.filter(x => !t || spotTech(x.s).includes(t)).filter(x => f === 'all' || (f === 'beach' && x.s.type === 'beach') || (f === 'rock' && x.s.type === 'rock') ||
+    return list.filter(x => !t || spotTech(x.s).includes(t)).filter(x => !S.settings.fish || C.spotHasFish(x.s, S.settings.fish)).filter(x => f === 'all' || (f === 'beach' && x.s.type === 'beach') || (f === 'rock' && x.s.type === 'rock') ||
       (f === 'near' && km(S.settings.home, x.s) <= 30) || f === x.s.depth);
   }
 
+  // Рыбы, которые есть хотя бы на одном месте
+  const TARGET_FISH = () => C.FISH.filter(f => Object.values(C.SPOT_FISH).some(l => l.includes(f.id)));
+  function fishChips() {
+    const cur = S.settings.fish && C.FISH.find(f => f.id === S.settings.fish);
+    return '<button class="chip' + (cur ? ' on' : '') + '" data-act="togglefish">🐟 ' + (cur ? esc(cur.ru) : T('Хочу поймать…')) + (S.showFish ? ' ▴' : ' ▾') + '</button>' +
+      (S.showFish ? '<button class="chip' + (!cur ? ' on' : '') + '" data-fish="any">' + T('Любая рыба') + '</button>' +
+        TARGET_FISH().map(f => '<button class="chip' + (cur && cur.id === f.id ? ' on' : '') + '" data-fish="' + f.id + '">' + esc(f.ru) + '</button>').join('') : '');
+  }
   const FILTERS = [['all', T('Все')], ['near', T('До 30 км')], ['beach', T('Пляж')], ['rock', T('Скалы')], ['shallow', T('0–5 м')], ['mid', T('5–15 м')], ['deep', T('15+ м')]];
   // Окно клёва рядом с домом в ближайшие 3 часа
   function nearWindow() {
@@ -200,6 +216,7 @@
         .map(([k, t]) => '<button data-tech="' + k + '" class="chip ' + ((S.settings.tech || 'all') === k ? 'on' : '') + '">' + t + '</button>').join('') +
       '</div><div class="chips">' + '<button class="chip' + (S.settings.filter !== 'all' ? ' on' : '') + '" data-act="togglef">⚙ ' + (S.settings.filter !== 'all' ? FILTERS.find(x => x[0] === S.settings.filter)[1] : T('Фильтры')) + (S.showF ? ' ▴' : ' ▾') + '</button>' +
       (S.showF ? FILTERS.map(([k, t]) => '<button data-filter="' + k + '" class="chip ' + (S.settings.filter === k ? 'on' : '') + '">' + t + '</button>').join('') : '') +
+      '</div><div class="chips">' + fishChips() +
       T('</div><div class="sub">Луна: ') + C.moonName(moon) + ' · ' + C.DOW[new Date(Date.now() + S.day * 86400000).getDay()] +
       (S.wx ? T(' · прогноз ') + new Date(S.wx.at).toLocaleTimeString(LOC, { hour: '2-digit', minute: '2-digit' }) : '') +
       T(' <button class="link" data-act="refresh">обновить</button></div></header>');
@@ -207,6 +224,9 @@
     if (S.err) h += '<p class="warn">' + esc(S.err) + '</p>';
     const ls = licState(); if (ls && ls.d <= 30) h += '<p class="warn">' + esc(ls.text) + T(' <button class="link" data-act="licshow">Открыть</button></p>');
     if (!S.wx && !S.loading) h += T('<p class="note">Погоды пока нет. Нажмите «обновить», нужен интернет.</p>');
+    const tf = S.settings.fish && C.FISH.find(f => f.id === S.settings.fish);
+    if (tf && !C.fishOpen(tf, new Date(Date.now() + S.day * 86400000))) h += '<p class="warn">' + esc(tf.ru) + ': ' + T('сейчас запретный сезон, ловить нельзя.') + '</p>';
+    else if (tf) h += '<p class="note"><b>' + esc(tf.ru) + ':</b> ' + esc(tf.tips) + '</p>';
     const nw = nearWindow();
     if (nw) h += '<button class="nearbar" data-spot="' + esc(nw.s.id) + '"><b>🎣 ' + T('Скоро клёв рядом') + '</b><span>' + esc(nw.s.name) + ' · ' + hhmm(nw.wx.t[nw.b.i]) + ' · ' + T('оценка') + ' ' + nw.b.score + ' · ' + km(S.settings.home, nw.s) + T(' км') + '</span></button>';
     if (S.settings.night) h += '<div class="quick"><button class="btn" data-act="addcatch">＋ ' + T('Улов') + '</button><button class="btn" data-act="share">📤 ' + T('Моё место') + '</button><a class="btn" target="_blank" rel="noopener" href="' + homeRoute() + '">🏠 ' + T('Домой') + '</a></div>';
@@ -287,7 +307,7 @@
       h += T('</table><p class="muted">Ветер км/ч, стрелка — куда дует. Волна м. Давление гПа.</p>');
     }
     const catches = S.journal.filter(j => j.spot === id);
-    if (catches.length) h += T('<h3>Мои уловы здесь</h3><p>') + catches.length + T(' записей, лучшие часы: ') + topHours(catches) + '</p>';
+    if (catches.length) h += T('<h3>Мои уловы здесь</h3><p>') + catches.length + T(' записей, лучшие часы: ') + topHours(catches) + '</p>' + recipe(catches.filter(j => j.fish));
     h += '<div class="btns">' +
       (s.src === 'mine' ? '<button class="btn" data-act="editspot" data-spot="' + esc(s.id) + T('">Изменить</button><button class="btn danger" data-act="delspot" data-spot="') + esc(s.id) + T('">Удалить</button>')
         : '<button class="btn" data-act="movespot" data-spot="' + esc(s.id) + T('">Уточнить место на карте</button><button class="btn" data-act="hidespot" data-spot="') + esc(s.id) + T('">Скрыть точку</button>')) +
@@ -438,6 +458,20 @@
       if (navigator.share) navigator.share({ text }).catch(() => { });
       else location.href = 'https://wa.me/?text=' + encodeURIComponent(text);
     });
+  }
+  // Мой рецепт на месте: что, на что, чем и при какой погоде клевало
+  function recipe(list) {
+    if (!list.length) return '';
+    const top = fn => { const m = {}; list.forEach(e => { const k = fn(e); if (k) m[k] = (m[k] || 0) + 1; }); const r = Object.entries(m).sort((a, b) => b[1] - a[1])[0]; return r ? r[0] : null; };
+    const fish = top(e => (C.FISH.find(f => f.id === e.fish) || {}).ru), bait = top(e => e.bait), method = top(e => e.method);
+    const cs = list.map(condOf), num = k => cs.map(c => c[k]).filter(v => v != null);
+    const wi = num('wind'), wa = num('wave'), dirs = num('dir');
+    const rng = (a, u) => a.length ? (Math.min(...a) === Math.max(...a) ? Math.min(...a) : Math.min(...a) + '–' + Math.max(...a)) + u : null;
+    const parts = [fish && T('рыба: ') + fish, bait && T('наживка: ') + bait, method && T('способ: ') + method,
+      rng(wi, T(' км/ч')) && T('ветер ') + rng(wi, T(' км/ч')), rng(wa, T(' м')) && T('волна ') + rng(wa, T(' м')),
+      dirs.length && T('ветер с ') + compass(dirs[0])].filter(Boolean);
+    return '<div class="worked"><b>' + T('Мой рецепт здесь') + '</b><p>' + parts.map(esc).join(' · ') + '</p><p class="muted">' +
+      T('Когда погода похожа на ваши удачные выходы, место получает до +10 баллов («как в ваш удачный выход»).') + '</p></div>';
   }
   function topHours(list) {
     const c = {}; list.forEach(j => { const hh = (j.time || '').slice(11, 13); if (hh) c[hh] = (c[hh] || 0) + 1; });
@@ -673,9 +707,15 @@
       const entry = { id, time: fd.get('time'), spot: fd.get('spot'), fish: fd.get('fish') || null, len: +fd.get('len') || null, kg: +fd.get('kg') || null,
         method: fd.get('method'), bait: fd.get('bait'), kept: fd.get('kept'), note: fd.get('note') };
       entry.wx = wxSnapshot(entry.spot, entry.time);
+      entry.cond = wxCond(entry.spot, entry.time);
       if (file && file.size) { const data = await shrink(file); if (data) { await photoDB.put(id, data); entry.photo = true; } }
       S.journal.push(entry); store.set('journal', S.journal); closeModal(); S.tab = 'log'; store.set('tab', 'log'); render(); toast(T('Записано'));
     };
+  }
+  function wxCond(spotId, time) {
+    const wx = wxFor(spotId); if (!wx || !time) return null;
+    const k = wx.t.indexOf(time.slice(0, 13) + ':00'); if (k < 0) return null;
+    return { wind: Math.round(wx.wind[k]), dir: Math.round(wx.dir[k]), wave: wx.wave[k] != null ? +wx.wave[k].toFixed(1) : null };
   }
   function wxSnapshot(spotId, time) {
     const wx = wxFor(spotId); if (!wx || !time) return '';
@@ -817,7 +857,7 @@
       '<a target="_blank" rel="noopener" href="https://www.caib.es/sites/reservesmarines/es/regulacian_de_actividades_0/">Ponent</a></li>' +
       T('<li>Координаты 10 точек и описания 20 парковок сверены по описаниям пляжей (mallorcard.es); ограничения Formentor — по DGT 2026. Остальное примерно, проверяйте на месте.</li>') +
       T('<li>Погода: Open-Meteo. Карта: OpenStreetMap.</li><li>Сомнения по заповедникам: 971 176 100.</li></ul></div>') +
-      T('<p class="foot">Рыбалка Майорка · версия 2.14 · данные хранятся только в этом телефоне.</p>');
+      T('<p class="foot">Рыбалка Майорка · версия 2.15 · данные хранятся только в этом телефоне.</p>');
   }
 
   async function doExport() {
@@ -905,10 +945,11 @@
   document.addEventListener('click', e => {
     const lb = e.target.closest('[data-lang]');
     if (lb) { try { localStorage.setItem('ryb_lang', lb.dataset.lang); } catch (err) { } location.reload(); return; }
-    const t = e.target.closest('[data-tab],[data-day],[data-filter],[data-tech],[data-fv],[data-act],[data-spot]');
+    const t = e.target.closest('[data-tab],[data-day],[data-filter],[data-tech],[data-fish],[data-fv],[data-act],[data-spot]');
     if (!t) return;
     if (t.dataset.tab) { S.tab = t.dataset.tab; store.set('tab', S.tab); pickMode = null; render(); window.scrollTo(0, 0); return; }
     if (t.dataset.day) { S.day = +t.dataset.day; render(); return; }
+    if (t.dataset.fish) { S.settings.fish = t.dataset.fish === 'any' ? null : t.dataset.fish; S.showFish = false; store.set('settings', S.settings); render(); return; }
     if (t.dataset.tech) { S.settings.tech = t.dataset.tech; store.set('settings', S.settings); render(); return; }
     if (t.dataset.fv) { S.fishView = t.dataset.fv; render(); return; }
     if (t.dataset.act === 'delmark') { S.marks = S.marks.filter(m => m.id !== t.dataset.id); store.set('marks', S.marks); viewMap(); return; }
@@ -919,6 +960,7 @@
       case 'close': closeModal(); break;
       case 'night': S.settings.night = !S.settings.night; store.set('settings', S.settings); applyNight(); render(); break;
       case 'togglef': S.showF = !S.showF; render(); break;
+      case 'togglefish': S.showFish = !S.showFish; render(); break;
       case 'pack': packView(id); break;
       case 'packreset': S.pack = { day: C.ymd(new Date()), done: [] }; store.set('pack', S.pack); document.querySelectorAll('[data-pack]').forEach(c => c.checked = false); break;
       case 'share': shareLoc(); break;

@@ -5,6 +5,29 @@
   try { lang = root.localStorage && root.localStorage.getItem('ryb_lang') || 'ru'; } catch (e) {}
   if (!LANGS[lang]) lang = 'ru';
   var D = {
+"Хочу поймать…": ["I want to catch…", "Vreau să prind…", "Quiero pescar…"],
+"Любая рыба": ["Any fish", "Orice pește", "Cualquier pez"],
+"сейчас запретный сезон, ловить нельзя.": ["closed season now, fishing not allowed.", "acum e sezon de prohibiție, nu se pescuiește.", "ahora es veda, no se puede pescar."],
+"рыба: ": ["fish: ", "pește: ", "pez: "],
+"наживка: ": ["bait: ", "momeală: ", "cebo: "],
+"способ: ": ["method: ", "metodă: ", "método: "],
+"ветер с ": ["wind from ", "vânt din ", "viento del "],
+"Мой рецепт здесь": ["My recipe here", "Rețeta mea aici", "Mi receta aquí"],
+"Когда погода похожа на ваши удачные выходы, место получает до +10 баллов («как в ваш удачный выход»).": ["When the weather is like your good trips, the spot gets up to +10 points (“like your good trip”).", "Când vremea seamănă cu ieșirile tale reușite, locul primește până la +10 puncte („ca la ieșirea ta reușită”).", "Cuando el tiempo se parece a tus buenas salidas, el lugar recibe hasta +10 puntos («como en tu buena salida»)."],
+"запретный сезон": ["closed season", "sezon de prohibiție", "veda"],
+"сезон: ": ["season: ", "sezon: ", "temporada: "],
+"мутная вода после шторма": ["murky water after a storm", "apă tulbure după furtună", "agua turbia tras el temporal"],
+"волна для сибаса": ["waves for sea bass", "valuri pentru lup de mare", "olas para lubina"],
+"сумерки и ночь": ["dusk and night", "amurg și noapte", "anochecer y noche"],
+"ночь и рассвет": ["night and dawn", "noapte și zori", "noche y amanecer"],
+"песок и умеренная волна": ["sand and moderate waves", "nisip și valuri moderate", "arena y oleaje moderado"],
+"прибой на песке": ["surf on the sand", "valuri pe nisip", "rompiente en la arena"],
+"белая вода у камней": ["white water at the rocks", "apă albă la stânci", "agua blanca en las rocas"],
+"тихая вода": ["calm water", "apă liniștită", "agua tranquila"],
+"глубина": ["deep water", "adâncime", "profundidad"],
+"утро и вечер у мыса": ["morning and evening at the cape", "dimineața și seara la cap", "mañana y tarde en el cabo"],
+"тихая вода днём": ["calm water by day", "apă liniștită ziua", "agua tranquila de día"],
+"как в ваш удачный выход": ["like your good trip", "ca la ieșirea ta reușită", "como en tu buena salida"],
 "рядом с домом": ["close to home", "aproape de casă", "cerca de casa"],
 "В списке из оценки вычтен 1 балл за каждые 8 км от дома, поэтому при одинаковой погоде ближнее место стоит выше.": ["In this list 1 point is taken off for every 8 km from home, so with the same weather the closer spot ranks higher.", "În listă se scade 1 punct pentru fiecare 8 km de casă, așa că la aceeași vreme locul mai apropiat e mai sus.", "En la lista se resta 1 punto por cada 8 km desde casa, así que con el mismo tiempo el lugar más cercano queda más arriba."],
 "Почему здесь:": ["Why here:", "De ce aici:", "Por qué aquí:"],
@@ -2806,7 +2829,7 @@
 "Резерват s'Albufereta: ловля запрещена везде, кроме пляжей и морского берега. В лагуне и каналах нельзя (правила резервата, caib.es).": ["s'Albufereta reserve: fishing is banned everywhere except the beaches and the sea shore. Not in the lagoon or canals (reserve rules, caib.es).", "Rezervația s'Albufereta: pescuitul e interzis peste tot, cu excepția plajelor și a țărmului mării. Nu în lagună sau canale (regulile rezervației, caib.es).", "Reserva de s'Albufereta: pesca prohibida en todo el espacio, salvo en las playas y la ribera del mar. No en la laguna ni en los canales (normas de la reserva, caib.es)."],
 "<p class=\"foot\">Рыбалка Майорка · версия 2.8 · данные хранятся только в этом телефоне.</p>": ["<p class=\"foot\">Mallorca Fishing · version 2.8 · data is stored only on this phone.</p>", "<p class=\"foot\">Pescuit Mallorca · versiunea 2.8 · datele sunt stocate doar pe acest telefon.</p>", "<p class=\"foot\">Pesca Mallorca · versión 2.8 · los datos se guardan solo en este teléfono.</p>"],
 "У пляжа вдоль Ma-2220, не в резервате. Точку уточняем": ["By the beach along the Ma-2220, outside the reserve. Exact point pending", "Lângă plajă de-a lungul Ma-2220, nu în rezervație. Punctul se verifică", "Junto a la playa por la Ma-2220, fuera de la reserva. Punto por confirmar"],
-"<p class=\"foot\">Рыбалка Майорка · версия 2.14 · данные хранятся только в этом телефоне.</p>": ["<p class=\"foot\">Mallorca Fishing · version 2.14 · data is stored only on this phone.</p>", "<p class=\"foot\">Pescuit Mallorca · versiunea 2.14 · datele sunt stocate doar pe acest telefon.</p>", "<p class=\"foot\">Pesca Mallorca · versión 2.14 · los datos se guardan solo en este teléfono.</p>"]
+"<p class=\"foot\">Рыбалка Майорка · версия 2.15 · данные хранятся только в этом телефоне.</p>": ["<p class=\"foot\">Mallorca Fishing · version 2.15 · data is stored only on this phone.</p>", "<p class=\"foot\">Pescuit Mallorca · versiunea 2.15 · datele sunt stocate doar pe acest telefon.</p>", "<p class=\"foot\">Pesca Mallorca · versión 2.15 · los datos se guardan solo en este teléfono.</p>"]
 };
   var I = {
     LANGS: LANGS,

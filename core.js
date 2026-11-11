@@ -355,6 +355,55 @@
     lampuga:[8,9,10,11,12], raor:[9,10,11], calamar:[10,11,12,1,2], pulpo:[3,4,5,9,10], erizo:[12,1,2,3], cangrejo:[6,7,8,9,10],
     oblada:[4,5,6,7,8,9,10], mabre:[5,6,7,8,9,10], lecha:[6,7,8,9,10,11], anjova:[9,10,11] };
 
+  // Какая рыба водится на месте (по описаниям мест в атласе)
+  const SPOT_FISH = { sonserra:['dorada','lubina','sargo','mabre'], picafort:['dorada','sargo','oblada','mabre'], alcanada:['sargo','calamar','oblada'],
+    betlem:['sargo','lampuga','calamar'], estrenc:['dorada','lubina','mabre'], malpas:['sargo','calamar','anjova'], namer:['sargo','lampuga','calamar','oblada'],
+    portocolom:['dorada','sargo','calamar'], santvicenc:['sargo','denton','calamar'], calablava:['dorada','sargo','calamar'], capdepera:['denton','calamar','lecha','anjova'],
+    soller:['sargo','denton','calamar','lecha'], formentor:['denton','calamar','lecha','anjova'], salines:['raor','dorada','sargo'], figuera:['sargo','calamar','anjova'],
+    santelm:['sargo','denton','calamar'], canonge:['lubina','sargo'], valldemossa:['lubina','sargo'], banyalbufar:['lubina','sargo'], calobra:['lubina','sargo'],
+    figueraformentor:['lubina','sargo','calamar'], delta:['dorada','lubina','sargo','calamar'], songranada:['lubina','sargo'], clotsase:['dorada','sargo'],
+    almunia:['dorada','lubina','sargo'], llombards:['dorada','sargo'], crab_muro:['lubina','cangrejo'], crab_fontanelles:['cangrejo'], crab_albufereta:['cangrejo'] };
+  // Свои точки (без описания) подходят для любой рыбы
+  function spotHasFish(spot, fid) { const l = SPOT_FISH[spot.id]; return !l || l.includes(fid); }
+
+  // Поправки под выбранную рыбу: сезон, вода, время суток. ctx: wave, wind, sst, dusk/dark/dawn/night, rock, murky
+  function fishAdj(fid, spot, date, c, up, tags) {
+    const f = FISH.find(x => x.id === fid); if (!f) return;
+    const m = date.getMonth() + 1;
+    if (!fishOpen(f, date)) { up(-60); tags.push(T('запретный сезон')); return; }
+    if ((BEST[fid] || []).includes(m)) up(8, T('сезон: ') + f.ru); else up(-12);
+    const w = c.wave, h = date.getHours();
+    switch (fid) {
+      case 'lubina': if (c.murky) up(12, T('мутная вода после шторма')); if (w != null && w >= 0.5 && w <= 1.5) up(6, T('волна для сибаса')); if (c.dawn || c.dusk || c.night) up(5, T('сумерки и ночь')); break;
+      case 'dorada': if (c.night || c.dawn) up(6, T('ночь и рассвет')); if (c.sst != null && c.sst >= 16) up(3); if (spot.type === 'beach' && w != null && w <= 1.2) up(4, T('песок и умеренная волна')); break;
+      case 'mabre': if (spot.type === 'beach' && w != null && w >= 0.3 && w <= 1.0) up(6, T('прибой на песке')); break;
+      case 'sargo': if (c.rock && w != null && w >= 0.5 && w <= 1.2) up(8, T('белая вода у камней')); break;
+      case 'calamar': if (c.dusk || c.dark) up(12, T('время кальмара')); if (w != null && w < 0.6) up(5, T('тихая вода')); if (w != null && w > 0.8) up(-10); break;
+      case 'denton': if (c.dawn) up(10, T('рассвет')); if (spot.depth === 'deep') up(4, T('глубина')); break;
+      case 'lampuga': case 'lecha': case 'anjova': if (c.dawn || c.dusk) up(8, T('утро и вечер у мыса')); if (spot.depth !== 'shallow') up(3); break;
+      case 'oblada': if (w != null && w < 0.6 && !c.night) up(6, T('тихая вода днём')); break;
+      case 'raor': if (w != null && w < 0.5 && !c.night) up(5, T('тихая вода днём')); break;
+      case 'cangrejo': if (c.sst != null && c.sst >= 20) up(15, T('тёплая вода — краб активен')); if (c.night) up(-30); break;
+    }
+  }
+
+  // Похоже на ваш удачный выход: ветер, волна, направление ветра и час как в записи журнала
+  function likeMine(spot, like, fid, x) {
+    let best = 0, h = x.date.getHours();
+    for (const c of like) {
+      if (fid && c.fish && c.fish !== fid) continue;
+      let m = 0, n = 0;
+      if (c.wind != null && x.wind != null) { n++; if (Math.abs(c.wind - x.wind) <= 6) m++; }
+      if (c.wave != null && x.wave != null) { n++; if (Math.abs(c.wave - x.wave) <= 0.3) m++; }
+      if (c.dir != null && x.dir != null) { n++; if (angDiff(c.dir, x.dir) <= 45) m++; }
+      if (c.hour != null) { n++; const d = Math.abs(c.hour - h); if (Math.min(d, 24 - d) <= 2) m++; }
+      if (n < 3 || m < n - 1) continue;
+      const pts = (m === n ? 10 : 6) * (c.spot === spot.id ? 1 : 0.5);
+      best = Math.max(best, Math.round(pts));
+    }
+    return best;
+  }
+
   // Выше 85 оценка растёт плавно: так лучшие места не слипаются на 100
   function cap(s) { return Math.max(0, Math.min(100, Math.round(s <= 85 ? s : 85 + 15 * (1 - Math.exp(-(s - 85) / 20))))); }
 
@@ -432,6 +481,15 @@
       if (tech==='rock') { if (wave!=null && wave>1.0) s-=10; }
       if (tech==='surf') { if (wave!=null && wave>=0.3 && wave<=1.0) s+=5; }
       if (tech==='crab') { s = 40 + (wave!=null && wave<0.5 ? 20 : 0) + ((wx.sst[i]||0)>=20 ? 20 : (wx.sst[i]||0)>=17 ? 10 : -10) + (wind!=null && wind<15 ? 10 : 0); r.tags=[]; if ((wx.sst[i]||0)>=20) r.tags.push(T('тёплая вода — краб активен')); }
+    }
+    // Выбранная рыба и ваш журнал
+    if (pers && (pers.fish || (pers.like && pers.like.length))) {
+      const sun2 = sun || { sr: 0, ss: 0 }, t3 = date.getTime();
+      const c = { wave, wind, sst, rock, murky: maxW > 1.5 && wave != null && wave < 1.2,
+        dawn: Math.abs(t3 - sun2.sr) <= 5400000, dusk: Math.abs(t3 - sun2.ss) <= 5400000,
+        dark: t3 > sun2.ss && t3 < sun2.ss + 3 * 3600000, night: t3 < sun2.sr - 3600000 || t3 > sun2.ss + 3600000 };
+      if (pers.fish) fishAdj(pers.fish, spot, date, c, up, r.tags);
+      if (pers.like && pers.like.length) { const p = likeMine(spot, pers.like, pers.fish, { date, wind, wave, dir }); if (p) { up(p, T('как в ваш удачный выход')); r.tags.push(T('как в ваш удачный выход')); } }
     }
     if (L.unsure) r.tags.push(T('правила не подтверждены'));
     r.raw = s;
@@ -521,5 +579,5 @@
   SPOTS.forEach(sp => { sp.tech = SPOT_TECH[sp.id] || []; sp.parkQ = PARK_Q[sp.id] || ''; sp.parkPt = PARK_PT[sp.id] || null; });
 
   root.FishCore = { RESERVES, SPOTS, FISH, TALLAS_URL, RULES_URL, legal, fishOpen, checkCatch, moonPhase, moonName,
-    hourScore, bestWindow, cap, tackle, TECH, solunar, inSol, sinker, BEST, parseWeather, weatherUrls, isHoliday, ymd, DOW, angDiff };
+    hourScore, bestWindow, cap, SPOT_FISH, spotHasFish, likeMine, tackle, TECH, solunar, inSol, sinker, BEST, parseWeather, weatherUrls, isHoliday, ymd, DOW, angDiff };
 })(typeof self !== 'undefined' ? self : this);

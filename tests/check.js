@@ -100,6 +100,24 @@ check('плавный потолок оценки: растёт и не выше
   let prev = -1; for (let s = -20; s <= 200; s += 1) { const v = C.cap(s); ok(v >= prev && v <= 100 && v >= 0, 'cap(' + s + ')=' + v); prev = v; }
 });
 
+console.log('«Хочу поймать» и журнал');
+check('все рыбы в списке мест существуют', () => {
+  const ids = C.FISH.map(f => f.id), bad = [];
+  Object.entries(C.SPOT_FISH).forEach(([s, l]) => { if (!C.SPOTS.find(x => x.id === s)) bad.push('место ' + s); l.forEach(f => { if (!ids.includes(f)) bad.push(s + ':' + f); }); });
+  ok(!bad.length, bad.join(', '));
+});
+check('кальмар: вечер лучше полудня', () => {
+  const s = C.SPOTS.find(x => x.id === 'portocolom'), wx = fakeWeather({ wave: 0.3 }), noon = 24 + 12, eve = 24 + 18;
+  const p = { fish: 'calamar' };
+  ok(C.hourScore(s, wx, eve, null, p).score > C.hourScore(s, wx, noon, null, p).score, 'вечер не выше полудня');
+});
+check('похожая погода из журнала поднимает оценку', () => {
+  const s = C.SPOTS.find(x => x.reserve === 'none'), wx = fakeWeather(), i = 30;
+  const like = [{ spot: s.id, fish: 'sargo', hour: +wx.t[i].slice(11, 13), wind: 12, wave: 0.6, dir: 200 }];
+  const a = C.hourScore(s, wx, i, null, { like }), b = C.hourScore(s, wx, i, null, null);
+  ok(a.raw > b.raw && a.tags.length > b.tags.length, 'бонус не добавлен');
+});
+
 console.log('Переводы');
 const D = R.__D;
 check('у каждой фразы 3 перевода (en, ro, es)', () => {
@@ -119,6 +137,7 @@ check('версия в подвале переведена', () => {
   const src = read('app.js') + read('core.js');
   const keys = [...src.matchAll(/T\('((?:[^'\\]|\\.)*)'\)/g)].map(m => m[1].replace(/\\'/g, "'").replace(/\\\\/g, '\\'));
   const miss = [...new Set(keys)].filter(k => /[а-яё]/i.test(k) && !D[k]);
+  if (process.env.SHOW_MISSING) console.log(JSON.stringify(miss, null, 1));
   if (miss.length) { warns++; console.log('  ! без перевода (' + miss.length + '): ' + miss.slice(0, 5).map(x => '«' + x.slice(0, 40) + '»').join(', ') + (miss.length > 5 ? ' …' : '')); }
 }
 
