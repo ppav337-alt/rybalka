@@ -1,5 +1,5 @@
 /* Рыбалка Майорка — офлайн и вечерние уведомления */
-const VERSION = 'ryb-v23';
+const VERSION = 'ryb-v24';
 const SHELL = ['./', 'index.html', 'core.js', 'app.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png',
   'lib/leaflet.css',
   'lib/leaflet.js', 'i18n.js'];
