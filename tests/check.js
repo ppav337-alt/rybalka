@@ -118,6 +118,19 @@ check('похожая погода из журнала поднимает оце
   ok(a.raw > b.raw && a.tags.length > b.tags.length, 'бонус не добавлен');
 });
 
+console.log('Снасть сейчас');
+check('снасть подбирается для всех мест и часов', () => {
+  const wx = fakeWeather();
+  for (const s of C.SPOTS) for (let i = 0; i < wx.t.length; i += 3) {
+    const r = C.rigNow(s, wx, i, null, null);
+    ok(Array.isArray(r.lines) && r.lines.every(x => typeof x === 'string' && x && !/undefined|NaN/.test(x)), s.id + ' ' + wx.t[i] + ': ' + JSON.stringify(r.lines));
+  }
+});
+check('краба не советуем ночью', () => {
+  const wx = fakeWeather(), s = C.SPOTS.find(x => x.id === 'crab_fontanelles'), night = wx.t.indexOf(wx.days[1] + 'T22:00');
+  const r = C.rigNow(s, wx, night, null, null); ok(!r.fish || r.fish.id !== 'cangrejo', 'ночью предложен краб');
+});
+
 console.log('Переводы');
 const D = R.__D;
 check('у каждой фразы 3 перевода (en, ro, es)', () => {
